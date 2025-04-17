@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uv.h>
-#include "MQTTPacket.h"
+#include "mqtt/paho.mqtt.embedded-c/MQTTPacket/src/MQTTPacket.h"
 
 uv_loop_t *loop;
 
@@ -28,15 +28,25 @@ void on_new_connection(uv_stream_t *server, int status) {
     uv_tcp_init(loop, client);
 
     if (uv_accept(server, (uv_stream_t *)client) == 0) {
-        printf("connected client\n");
-        // Create a message to send to the client
-        const char *message = "Hello from server!";
-        uv_buf_t write_buf = uv_buf_init((char *)message, strlen(message));
+        
+        unsigned char *mqtt_buf = malloc(100);  // allocate enough room
+        
+        unsigned char sessionPresent = 1;
+        unsigned char connack_rc = 77;
 
+        int mqtt_len = MQTTSerialize_connack(mqtt_buf, 100, sessionPresent, connack_rc);  // sessionPresent=0, connack_rc=0
+        
+        if(mqtt_len == 0){
+            printf("connack error");
+        }
+
+        // Wrap it in a uv_buf_t
+
+        uv_buf_t write_buf = uv_buf_init((char *)mqtt_buf, mqtt_len);
+    
+        // Write to the client
         uv_write_t *write_req = malloc(sizeof(uv_write_t));
         uv_write(write_req, (uv_stream_t *)client, &write_buf, 1, on_write_complete);
-
-
     } else {
         uv_close((uv_handle_t *)client, NULL);
     }
