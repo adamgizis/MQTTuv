@@ -29,6 +29,7 @@ void on_new_connection(uv_stream_t *server, int status) {
 
     if (uv_accept(server, (uv_stream_t *)client) == 0) {
         
+        printf("client connected");
         unsigned char *mqtt_buf = malloc(100);  // allocate enough room
         
         unsigned char sessionPresent = 1;

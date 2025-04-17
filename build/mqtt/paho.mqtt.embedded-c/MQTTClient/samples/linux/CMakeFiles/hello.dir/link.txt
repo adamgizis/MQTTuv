@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -rdynamic CMakeFiles/hello.dir/hello.cpp.o -o hello  -Wl,-rpath,/local/MQTTuv/build/mqtt/paho.mqtt.embedded-c/MQTTPacket/src ../../../MQTTPacket/src/libMQTTPacketClient.so 

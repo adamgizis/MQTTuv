@@ -12,6 +12,7 @@ add_subdirectory(mqtt/paho.mqtt.embedded-c)
 
 # Add your executable
 add_executable(${PROJECT_NAME} main.c)
+add_executable(client_test1 client_test.c)
 
 # Include headers
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -20,6 +21,17 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 # Link against libuv and MQTTPacket
 target_link_libraries(${PROJECT_NAME}
+    ${LIBUV_LIBRARIES}
+    paho-embed-mqtt3c
+)
+
+# Include headers
+target_include_directories(client_test1 PRIVATE
+    ${LIBUV_INCLUDE_DIRS}
+)
+
+# Link against libuv and MQTTPacket
+target_link_libraries(client_test1
     ${LIBUV_LIBRARIES}
     paho-embed-mqtt3c
 )

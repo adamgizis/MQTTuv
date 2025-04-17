@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/client_test1.dir/client_test.c.o -o client_test1  -Wl,-rpath,/local/MQTTuv/build/mqtt/paho.mqtt.embedded-c/MQTTPacket/src -luv -lpthread -ldl -lrt mqtt/paho.mqtt.embedded-c/MQTTPacket/src/libpaho-embed-mqtt3c.so 
