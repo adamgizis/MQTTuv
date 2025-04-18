@@ -7,31 +7,27 @@ set(CMAKE_C_STANDARD 11)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBUV REQUIRED libuv)
 
-# Add the MQTTPacket subdirectory
 add_subdirectory(mqtt/paho.mqtt.embedded-c)
 
-# Add your executable
-add_executable(${PROJECT_NAME} main.c)
-add_executable(client_test1 client_test.c)
+# Collect all source files in src/
+file(GLOB SRC_FILES src/*.c)
 
-# Include headers
+# Executable for main
+add_executable(${PROJECT_NAME} main.c ${SRC_FILES})
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${LIBUV_INCLUDE_DIRS}
 )
-
-# Link against libuv and MQTTPacket
 target_link_libraries(${PROJECT_NAME}
     ${LIBUV_LIBRARIES}
     paho-embed-mqtt3c
 )
 
-# Include headers
+add_executable(client_test1 client_test.c ${SRC_FILES})
 target_include_directories(client_test1 PRIVATE
     ${LIBUV_INCLUDE_DIRS}
 )
-
-# Link against libuv and MQTTPacket
 target_link_libraries(client_test1
     ${LIBUV_LIBRARIES}
     paho-embed-mqtt3c
 )
+

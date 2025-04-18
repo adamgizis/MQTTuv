@@ -7,10 +7,6 @@
 
 // Client will send the mqtt connect packet and recieve the connack packet
 
-//based on https://gist.githubusercontent.com/snatchev/5255976/
-//raw/8392c42d719bb775053036e32b21affdf932c1b7/libuv-tcp-client.c
-//which was based on libuv 0.1, there is considerable difference there.
-
 
 static void on_close(uv_handle_t* handle);
 static void on_connect(uv_connect_t* req, int status);
@@ -19,6 +15,8 @@ static void on_write(uv_write_t* req, int status);
 static uv_loop_t *loop;
 
 static void alloc_cb(uv_handle_t* handle, size_t size, uv_buf_t* buf) {
+    printf("size = %ld\n", size);
+    size = 100;
     *buf = uv_buf_init(malloc(size), size);
 }
 
@@ -53,7 +51,8 @@ void on_read(uv_stream_t* tcp, ssize_t nread, const uv_buf_t* buf)
             (unsigned char *)buf->base,
             nread
         );
-        if(success){
+        printf("sessionPresent %d, connack_rc = %d \n", sessionPresent,connack_rc );
+        if(success && sessionPresent == 1 && connack_rc == 77){
             printf("got success\n");
         }else{
             printf("what the \n");
@@ -68,13 +67,13 @@ void on_read(uv_stream_t* tcp, ssize_t nread, const uv_buf_t* buf)
     free(buf->base);
 }
 
-void write2(uv_stream_t* stream, char *data, int len2) {
-    uv_buf_t buffer[] = {
-        {.base = data, .len = len2}
-    };
-    uv_write_t *req = malloc(sizeof(uv_write_t));
-    uv_write(req, stream, buffer, 1, on_write);
-}
+// void write2(uv_stream_t* stream, char *data, int len2) {
+//     uv_buf_t buffer[] = {
+//         {.base = data, .len = len2}
+//     };
+//     uv_write_t *req = malloc(sizeof(uv_write_t));
+//     uv_write(req, stream, buffer, 1, on_write);
+// }
 
 void on_connect(uv_connect_t* connection, int status)
 {
