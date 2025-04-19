@@ -1,29 +1,3 @@
-/* BSD 2-Clause License
- *
- * Copyright (c) 2019, Andrea Giacomo Baldan All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * * Redistributions of source code must retain the above copyright notice,
- * this list of conditions and the following disclaimer.
- *
- * * Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
 
  #include <time.h>
  #include <errno.h>
@@ -55,7 +29,7 @@
  struct uv_loop_t* loop;
  
  /* Prototype for a command handler */
- typedef int handler(struct closure *, union mqtt_packet *);
+ typedef int handler(uv_stream_t* , union mqtt_packet *);
  
  /* I/O closures, for the 3 main operation of the server
   * - Accept a new connecting client
@@ -65,12 +39,15 @@
  
  static void on_accept( uv_stream_t *, int);
  static void on_read(uv_stream_t* , ssize_t, const uv_buf_t*);
+ static void on_write(uv_write_t*, int);
 
 // memory callback
  static void alloc_buffer(uv_handle_t *, size_t , uv_buf_t *);
+ // write2
+ static void write2(uv_stream_t* , char *, int);
  
  /* Command handler, each one have responsibility over a defined command packet */
- static int connect_handler(struct closure *, union mqtt_packet *);
+ static int connect_handler(uv_stream_t* , union mqtt_packet *);
  /*
   * Connection structure for private use of the module, mainly for accepting
   * new connections
@@ -81,91 +58,106 @@
  };
  
  /*
-  * Parse packet header, it is required at least the Fixed Header of each
-  * packed, which is contained in the first 2 bytes in order to read packet
-  * type and total length that we need to recv to complete the packet.
-  *
-  * This function accept a socket fd, a buffer to read incoming streams of
-  * bytes and a structure formed by 2 fields:
-  *
-   * - buf -> a byte buffer, it will be malloc'ed in the function and it will
-  *          contain the serialized bytes of the incoming packet
-  * - flags -> flags pointer, copy the flag setting of the incoming packet,
-  *            again for simplicity and convenience of the caller.
+This is my  attempt at the parse
   */
- static ssize_t recv_packet(int clientfd, unsigned char *buf, char *command) {
- 
-     ssize_t nbytes = 0;
- 
-     /* Read the first byte, it should contain the message type code */
-     if ((nbytes = recv_bytes(clientfd, buf, 1)) <= 0)
-         return -ERRCLIENTDC;
- 
-     unsigned char byte = *buf;
-     buf++;
- 
-     if (DISCONNECT < (byte >> 4) || CONNECT > (byte >> 4))
-         return -ERRPACKETERR;
- 
-     /*
-      * Read remaning length bytes which starts at byte 2 and can be long to 4
-      * bytes based on the size stored, so byte 2-5 is dedicated to the packet
-      * length.
-      */
-     unsigned char buff[4];
-     int count = 0;
-     int n = 0;
-     do {
-         if ((n = recv_bytes(clientfd, buf+count, 1)) <= 0)
-             return -ERRCLIENTDC;
-         buff[count] = buf[count];
-         nbytes += n;
-     } while (buff[count++] & (1 << 7));
- 
-     // Reset temporary buffer
-     const unsigned char *pbuf = &buff[0];
-     unsigned long long tlen = mqtt_decode_length(&pbuf);
- 
-     /*
-      * Set return code to -ERRMAXREQSIZE in case the total packet len exceeds
-      * the configuration limit `max_request_size`
-      */
-     if (tlen > conf->max_request_size) {
-         nbytes = -ERRMAXREQSIZE;
-         goto exit;
-     }
- 
-     /* Read remaining bytes to complete the packet */
-     if ((n = recv_bytes(clientfd, buf + 1, tlen)) < 0)
-         goto err;
- 
-     nbytes += n;
- 
-     *command = byte;
- 
- exit:
- 
-     return nbytes;
- 
- err:
- 
-     shutdown(clientfd, 0);
-     close(clientfd);
- 
-     return nbytes;
- 
- }
+  static ssize_t parse_packet(const unsigned char *input_buf, size_t input_len, char *command) {
+    if (input_len < 2)  // header and 
+        return -ERRPACKETERR;
+
+    size_t offset = 0;
+    unsigned char byte = input_buf[offset++];
+    
+    //
+    if ((byte >> 4) > DISCONNECT || (byte >> 4) < CONNECT)
+        return -ERRPACKETERR;
+
+
+    unsigned char buff[4];
+    int count = 0;
+    do {
+        if (offset >= input_len || count >= 4) 
+            return -ERRPACKETERR;
+        buff[count++] = input_buf[offset++];
+    } while (buff[count - 1] & (1 << 7));
+
+    const unsigned char *pbuf = buff;
+    unsigned long long tlen = mqtt_decode_length(&pbuf);
+
+    if (tlen > conf->max_request_size)
+        return -ERRMAXREQSIZE;
+
+    size_t total_packet_size = offset + tlen;
+    if (total_packet_size > input_len)
+        return -ERRPACKETERR;
+
+    // command is the first byte used to send to correct handler
+    *command = byte;
+    return total_packet_size;  // Number of bytes parsed
+}
  
  
- static int connect_handler(struct closure *cb, union mqtt_packet *pkt) {
+ static int connect_handler(uv_stream_t* client, union mqtt_packet *pkt) {
 
     // IF ALREADY IN HASHTABLE DISCONNECT THE STREAM AND DELETE
-    // ELSE ADD to client hashtable
-    // send back CONNACK
+    // TODO just return error_code and handle it on `on_read`
+    // if (hashtable_exists(sol.clients,
+    //     (const char *) pkt->connect.payload.client_id)) {
 
-    /* Record the new client connected */
-    info.nclients++;
-    info.nconnections++;
+    //     // Already connected client, 2 CONNECT packet should be interpreted as
+    //     // a violation of the protocol, causing disconnection of the client
+
+    //     sol_info("Received double CONNECT from %s, disconnecting client",
+    //     pkt->connect.payload.client_id);
+    //     hashtable_del(sol.clients, (const char *) pkt->connect.payload.client_id);
+
+    //     // Update stats
+    //     info.nclients--;
+    //     info.nconnections--;
+
+    //     return -1;
+    //     }
+
+        // create a new client and add to the hashtable
+        printf("in connect \n");
+
+
+
+
+        // struct sol_client *new_client = sol_malloc(sizeof(*new_client));
+
+        // printf("here");
+        // const char *cid = (const char *) pkt->connect.payload.client_id;
+        // new_client->client_id = sol_strdup(cid);
+
+        // printf("created new client\n");
+        // hashtable_put(sol.clients, cid, new_client);
+        // printf("added to hastable\n");
+        // if (pkt->connect.bits.clean_session == false){
+        //     new_client->session.subscriptions = list_create(NULL);
+        // }
+
+        // if (pkt->connect.bits.clean_session == false)
+        //     new_client->session.subscriptions = list_create(NULL);
+        // printf("connecting\n");
+        /* Record the new client connected */
+
+        // send back a connack messgae 
+        union mqtt_packet *response = sol_malloc(sizeof(*response));
+        unsigned char byte = CONNACK_BYTE;
+
+    
+        unsigned char session_present = 0;
+        unsigned char connect_flags = 0 | (session_present & 0x1) << 0;
+        unsigned char rc = 0;  // 0 means connection accepted
+    
+        response->connack = *mqtt_packet_connack(byte, connect_flags, rc);
+    
+        unsigned char *p = pack_mqtt_packet(response, CONNACK);
+
+        write2(client, p, MQTT_ACK_LEN);
+        
+        info.nclients++;
+        info.nconnections++;
      
  }
 
@@ -175,7 +167,22 @@
     buf->len = suggested_size;
  }
  
- 
+ static void write2(uv_stream_t* stream, char *data, int len2) {
+    uv_buf_t buffer[] = {
+        {.base = data, .len = len2}
+    };
+    uv_write_t *req = malloc(sizeof(uv_write_t));
+    uv_write(req, stream, buffer, 1, on_write);
+}
+
+static void on_write(uv_write_t* req,  int status){
+    if (status) {
+        perror( "uv_write error ");
+            return;
+      }
+    printf("wrote.\n");
+    free(req);
+};
  
  static void on_accept(uv_stream_t *server, int status) {
     if (status < 0) {
@@ -187,18 +194,43 @@
     uv_tcp_init(server->loop, client);
 
     if (uv_accept(server, (uv_stream_t *)client) == 0) {
+        printf("accepted someone!! yipee\n");
         uv_read_start((uv_stream_t *)client, alloc_buffer, on_read);  
     } else {
         uv_close((uv_handle_t *)client, NULL);
     }
  }
 
+
  static void on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf){
     // parse the buffer
-
-    printf("here");
     // parse head send to 
+    if (nread < 0) {
+        uv_close((uv_handle_t*) client, NULL);
+        //free(buf->base);
+        return;
+    }
 
+    char command;
+    ssize_t parsed = parse_packet((unsigned char *)buf->base, nread, &command);
+
+    // error from the parsed function
+    if (parsed < 0){
+        uv_close((uv_handle_t*) client, NULL);
+        // free(buf->base);
+        return;
+    }
+    union mqtt_packet packet;
+    unpack_mqtt_packet((unsigned char *)buf->base, &packet);
+    union mqtt_header hdr = { .byte = command };
+    printf("command %d\n", command);
+    switch(command >> 4){
+        case(MQTT_CONNECT):
+            // pass in the client stream, and the packet to the specfic handler
+            connect_handler(client, &packet);
+    }
+
+    //free(buf->base);
  }
  
 
@@ -225,24 +257,6 @@
      return 0;
  }
  
- /*
-  * Cleanup function to be passed in as destructor to the Hashtable for
-  * registered closures.
-  */
- static int closure_destructor(struct hashtable_entry *entry) {
- 
-     if (!entry)
-         return -1;
- 
-     struct closure *closure = entry->val;
- 
-     if (closure->payload)
-         bytestring_release(closure->payload);
- 
-     sol_free(closure);
- 
-     return 0;
- }
  
  
  int start_server(const char *addr, const char *port) {
@@ -250,8 +264,7 @@
     /* Initialize global Sol instance */
     trie_init(&sol.topics);
     sol.clients = hashtable_create(client_destructor);
-    sol.closures = hashtable_create(closure_destructor);
-
+    sol.closures = NULL;
     uv_loop_t *loop = uv_default_loop();
     uv_tcp_t *server = malloc(sizeof(uv_tcp_t));
 

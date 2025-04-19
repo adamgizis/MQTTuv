@@ -6,7 +6,7 @@ mkdir build
 cd build
 cmake ..
 make 
-./mqttuv 
+./mqttuv -c ../sol/sol.conf
 ```
 
 for now have been testing with nc localhost 7000 to verify connection is being made

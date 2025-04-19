@@ -71,22 +71,22 @@ struct sol_info {
 };
 
 
-// typedef enum {
-//     MQTT_CONNECT = 1,
-//     MQTT_CONNACK = 2,
-//     MQTT_PUBLISH = 3,
-//     MQTT_PUBACK = 4,
-//     MQTT_PUBREC = 5,
-//     MQTT_PUBREL = 6,
-//     MQTT_PUBCOMP = 7,
-//     MQTT_SUBSCRIBE = 8,
-//     MQTT_SUBACK = 9,
-//     MQTT_UNSUBSCRIBE = 10,
-//     MQTT_UNSUBACK = 11,
-//     MQTT_PINGREQ = 12,
-//     MQTT_PINGRESP = 13,
-//     MQTT_DISCONNECT = 14,
-// } mqtt_packet_type_t;
+typedef enum {
+    MQTT_CONNECT = 1,
+    MQTT_CONNACK = 2,
+    MQTT_PUBLISH = 3,
+    MQTT_PUBACK = 4,
+    MQTT_PUBREC = 5,
+    MQTT_PUBREL = 6,
+    MQTT_PUBCOMP = 7,
+    MQTT_SUBSCRIBE = 8,
+    MQTT_SUBACK = 9,
+    MQTT_UNSUBSCRIBE = 10,
+    MQTT_UNSUBACK = 11,
+    MQTT_PINGREQ = 12,
+    MQTT_PINGRESP = 13,
+    MQTT_DISCONNECT = 14,
+} mqtt_packet_type_t;
 
 
 int start_server(const char *, const char *);
