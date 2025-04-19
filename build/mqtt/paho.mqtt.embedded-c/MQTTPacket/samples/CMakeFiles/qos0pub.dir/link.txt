@@ -1,1 +1,0 @@
-/usr/bin/cc -g -rdynamic CMakeFiles/qos0pub.dir/qos0pub.c.o CMakeFiles/qos0pub.dir/transport.c.o -o qos0pub  -Wl,-rpath,/local/MQTTuv/build/mqtt/paho.mqtt.embedded-c/MQTTPacket/src ../src/libpaho-embed-mqtt3c.so 

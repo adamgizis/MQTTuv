@@ -1,1 +1,0 @@
-/usr/bin/cc -g -rdynamic CMakeFiles/test1.dir/test1.c.o -o test1  -Wl,-rpath,/local/MQTTuv/build/mqtt/paho.mqtt.embedded-c/MQTTPacket/src ../src/libpaho-embed-mqtt3c.so 

@@ -1,1 +1,0 @@
-/usr/bin/c++ -g -rdynamic CMakeFiles/stdoutsub.dir/stdoutsub.cpp.o -o stdoutsub  -Wl,-rpath,/local/MQTTuv/build/mqtt/paho.mqtt.embedded-c/MQTTPacket/src ../../../MQTTPacket/src/libpaho-embed-mqtt3c.so 

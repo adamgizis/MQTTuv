@@ -1,1 +1,0 @@
-/usr/bin/cc -g -rdynamic CMakeFiles/stdoutsubc.dir/stdoutsub.c.o -o stdoutsubc  -Wl,-rpath,/local/MQTTuv/build/mqtt/paho.mqtt.embedded-c/MQTTClient-C/src:/local/MQTTuv/build/mqtt/paho.mqtt.embedded-c/MQTTPacket/src ../../src/libpaho-embed-mqtt3cc.so ../../../MQTTPacket/src/libpaho-embed-mqtt3c.so 
