@@ -6,5 +6,5 @@ C_DEFINES =
 
 C_INCLUDES = 
 
-C_FLAGS = -std=gnu11
+C_FLAGS =  -Wall -Wunused -Werror -Wextra -std=c11 -O3 -pedantic
 

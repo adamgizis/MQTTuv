@@ -1,2 +1,2 @@
-# Empty dependencies file for client_test1.
+# Empty dependencies file for mqtt.
 # This may be replaced when dependencies are built.

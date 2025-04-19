@@ -65,26 +65,6 @@ CMAKE_BINARY_DIR = /local/MQTTuv/build
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target package
-package: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool..."
-	/usr/bin/cpack --config ./CPackConfig.cmake
-.PHONY : package
-
-# Special rule for the target package
-package/fast: package
-.PHONY : package/fast
-
-# Special rule for the target package_source
-package_source:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
-	/usr/bin/cpack --config ./CPackSourceConfig.cmake /local/MQTTuv/build/CPackSourceConfig.cmake
-.PHONY : package_source
-
-# Special rule for the target package_source
-package_source/fast: package_source
-.PHONY : package_source/fast
-
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
@@ -104,51 +84,6 @@ rebuild_cache:
 # Special rule for the target rebuild_cache
 rebuild_cache/fast: rebuild_cache
 .PHONY : rebuild_cache/fast
-
-# Special rule for the target list_install_components
-list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\""
-.PHONY : list_install_components
-
-# Special rule for the target list_install_components
-list_install_components/fast: list_install_components
-.PHONY : list_install_components/fast
-
-# Special rule for the target install
-install: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install
-
-# Special rule for the target install
-install/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install/fast
-
-# Special rule for the target install/local
-install/local: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
-.PHONY : install/local
-
-# Special rule for the target install/local
-install/local/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
-.PHONY : install/local/fast
-
-# Special rule for the target install/strip
-install/strip: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
-.PHONY : install/strip
-
-# Special rule for the target install/strip
-install/strip/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
-.PHONY : install/strip/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -194,235 +129,293 @@ mqttuv/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/build
 .PHONY : mqttuv/fast
 
-#=============================================================================
-# Target rules for targets named client_test1
-
-# Build rule for target.
-client_test1: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 client_test1
-.PHONY : client_test1
-
-# fast build rule for target.
-client_test1/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/client_test1.dir/build.make CMakeFiles/client_test1.dir/build
-.PHONY : client_test1/fast
-
-#=============================================================================
-# Target rules for targets named paho-embed-mqtt3c
-
-# Build rule for target.
-paho-embed-mqtt3c: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 paho-embed-mqtt3c
-.PHONY : paho-embed-mqtt3c
-
-# fast build rule for target.
-paho-embed-mqtt3c/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTPacket/src/CMakeFiles/paho-embed-mqtt3c.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTPacket/src/CMakeFiles/paho-embed-mqtt3c.dir/build
-.PHONY : paho-embed-mqtt3c/fast
-
-#=============================================================================
-# Target rules for targets named MQTTPacketClient
-
-# Build rule for target.
-MQTTPacketClient: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 MQTTPacketClient
-.PHONY : MQTTPacketClient
-
-# fast build rule for target.
-MQTTPacketClient/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTPacket/src/CMakeFiles/MQTTPacketClient.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTPacket/src/CMakeFiles/MQTTPacketClient.dir/build
-.PHONY : MQTTPacketClient/fast
-
-#=============================================================================
-# Target rules for targets named MQTTPacketServer
-
-# Build rule for target.
-MQTTPacketServer: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 MQTTPacketServer
-.PHONY : MQTTPacketServer
-
-# fast build rule for target.
-MQTTPacketServer/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTPacket/src/CMakeFiles/MQTTPacketServer.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTPacket/src/CMakeFiles/MQTTPacketServer.dir/build
-.PHONY : MQTTPacketServer/fast
-
-#=============================================================================
-# Target rules for targets named pub0sub1
-
-# Build rule for target.
-pub0sub1: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 pub0sub1
-.PHONY : pub0sub1
-
-# fast build rule for target.
-pub0sub1/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTPacket/samples/CMakeFiles/pub0sub1.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTPacket/samples/CMakeFiles/pub0sub1.dir/build
-.PHONY : pub0sub1/fast
-
-#=============================================================================
-# Target rules for targets named pub0sub1_nb
-
-# Build rule for target.
-pub0sub1_nb: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 pub0sub1_nb
-.PHONY : pub0sub1_nb
-
-# fast build rule for target.
-pub0sub1_nb/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTPacket/samples/CMakeFiles/pub0sub1_nb.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTPacket/samples/CMakeFiles/pub0sub1_nb.dir/build
-.PHONY : pub0sub1_nb/fast
-
-#=============================================================================
-# Target rules for targets named qos0pub
-
-# Build rule for target.
-qos0pub: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 qos0pub
-.PHONY : qos0pub
-
-# fast build rule for target.
-qos0pub/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTPacket/samples/CMakeFiles/qos0pub.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTPacket/samples/CMakeFiles/qos0pub.dir/build
-.PHONY : qos0pub/fast
-
-#=============================================================================
-# Target rules for targets named test1
-
-# Build rule for target.
-test1: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test1
-.PHONY : test1
-
-# fast build rule for target.
-test1/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTPacket/test/CMakeFiles/test1.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTPacket/test/CMakeFiles/test1.dir/build
-.PHONY : test1/fast
-
-#=============================================================================
-# Target rules for targets named hello
-
-# Build rule for target.
-hello: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 hello
-.PHONY : hello
-
-# fast build rule for target.
-hello/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTClient/samples/linux/CMakeFiles/hello.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTClient/samples/linux/CMakeFiles/hello.dir/build
-.PHONY : hello/fast
-
-#=============================================================================
-# Target rules for targets named stdoutsub
-
-# Build rule for target.
-stdoutsub: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 stdoutsub
-.PHONY : stdoutsub
-
-# fast build rule for target.
-stdoutsub/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTClient/samples/linux/CMakeFiles/stdoutsub.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTClient/samples/linux/CMakeFiles/stdoutsub.dir/build
-.PHONY : stdoutsub/fast
-
-#=============================================================================
-# Target rules for targets named testcpp1
-
-# Build rule for target.
-testcpp1: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 testcpp1
-.PHONY : testcpp1
-
-# fast build rule for target.
-testcpp1/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTClient/test/CMakeFiles/testcpp1.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTClient/test/CMakeFiles/testcpp1.dir/build
-.PHONY : testcpp1/fast
-
-#=============================================================================
-# Target rules for targets named paho-embed-mqtt3cc
-
-# Build rule for target.
-paho-embed-mqtt3cc: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 paho-embed-mqtt3cc
-.PHONY : paho-embed-mqtt3cc
-
-# fast build rule for target.
-paho-embed-mqtt3cc/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTClient-C/src/CMakeFiles/paho-embed-mqtt3cc.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTClient-C/src/CMakeFiles/paho-embed-mqtt3cc.dir/build
-.PHONY : paho-embed-mqtt3cc/fast
-
-#=============================================================================
-# Target rules for targets named stdoutsubc
-
-# Build rule for target.
-stdoutsubc: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 stdoutsubc
-.PHONY : stdoutsubc
-
-# fast build rule for target.
-stdoutsubc/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTClient-C/samples/linux/CMakeFiles/stdoutsubc.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTClient-C/samples/linux/CMakeFiles/stdoutsubc.dir/build
-.PHONY : stdoutsubc/fast
-
-#=============================================================================
-# Target rules for targets named testc1
-
-# Build rule for target.
-testc1: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 testc1
-.PHONY : testc1
-
-# fast build rule for target.
-testc1/fast:
-	$(MAKE) $(MAKESILENT) -f mqtt/paho.mqtt.embedded-c/MQTTClient-C/test/CMakeFiles/testc1.dir/build.make mqtt/paho.mqtt.embedded-c/MQTTClient-C/test/CMakeFiles/testc1.dir/build
-.PHONY : testc1/fast
-
-client_test.o: client_test.c.o
-.PHONY : client_test.o
+src/config.o: src/config.c.o
+.PHONY : src/config.o
 
 # target to build an object file
-client_test.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/client_test1.dir/build.make CMakeFiles/client_test1.dir/client_test.c.o
-.PHONY : client_test.c.o
+src/config.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/config.c.o
+.PHONY : src/config.c.o
 
-client_test.i: client_test.c.i
-.PHONY : client_test.i
+src/config.i: src/config.c.i
+.PHONY : src/config.i
 
 # target to preprocess a source file
-client_test.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/client_test1.dir/build.make CMakeFiles/client_test1.dir/client_test.c.i
-.PHONY : client_test.c.i
+src/config.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/config.c.i
+.PHONY : src/config.c.i
 
-client_test.s: client_test.c.s
-.PHONY : client_test.s
+src/config.s: src/config.c.s
+.PHONY : src/config.s
 
 # target to generate assembly for a file
-client_test.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/client_test1.dir/build.make CMakeFiles/client_test1.dir/client_test.c.s
-.PHONY : client_test.c.s
+src/config.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/config.c.s
+.PHONY : src/config.c.s
 
-main.o: main.c.o
-.PHONY : main.o
+src/core.o: src/core.c.o
+.PHONY : src/core.o
 
 # target to build an object file
-main.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/main.c.o
-.PHONY : main.c.o
+src/core.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/core.c.o
+.PHONY : src/core.c.o
 
-main.i: main.c.i
-.PHONY : main.i
+src/core.i: src/core.c.i
+.PHONY : src/core.i
 
 # target to preprocess a source file
-main.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/main.c.i
-.PHONY : main.c.i
+src/core.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/core.c.i
+.PHONY : src/core.c.i
 
-main.s: main.c.s
-.PHONY : main.s
+src/core.s: src/core.c.s
+.PHONY : src/core.s
 
 # target to generate assembly for a file
-main.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/main.c.s
-.PHONY : main.c.s
+src/core.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/core.c.s
+.PHONY : src/core.c.s
+
+src/hashtable.o: src/hashtable.c.o
+.PHONY : src/hashtable.o
+
+# target to build an object file
+src/hashtable.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/hashtable.c.o
+.PHONY : src/hashtable.c.o
+
+src/hashtable.i: src/hashtable.c.i
+.PHONY : src/hashtable.i
+
+# target to preprocess a source file
+src/hashtable.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/hashtable.c.i
+.PHONY : src/hashtable.c.i
+
+src/hashtable.s: src/hashtable.c.s
+.PHONY : src/hashtable.s
+
+# target to generate assembly for a file
+src/hashtable.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/hashtable.c.s
+.PHONY : src/hashtable.c.s
+
+src/list.o: src/list.c.o
+.PHONY : src/list.o
+
+# target to build an object file
+src/list.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/list.c.o
+.PHONY : src/list.c.o
+
+src/list.i: src/list.c.i
+.PHONY : src/list.i
+
+# target to preprocess a source file
+src/list.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/list.c.i
+.PHONY : src/list.c.i
+
+src/list.s: src/list.c.s
+.PHONY : src/list.s
+
+# target to generate assembly for a file
+src/list.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/list.c.s
+.PHONY : src/list.c.s
+
+src/mqtt.o: src/mqtt.c.o
+.PHONY : src/mqtt.o
+
+# target to build an object file
+src/mqtt.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/mqtt.c.o
+.PHONY : src/mqtt.c.o
+
+src/mqtt.i: src/mqtt.c.i
+.PHONY : src/mqtt.i
+
+# target to preprocess a source file
+src/mqtt.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/mqtt.c.i
+.PHONY : src/mqtt.c.i
+
+src/mqtt.s: src/mqtt.c.s
+.PHONY : src/mqtt.s
+
+# target to generate assembly for a file
+src/mqtt.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/mqtt.c.s
+.PHONY : src/mqtt.c.s
+
+src/network.o: src/network.c.o
+.PHONY : src/network.o
+
+# target to build an object file
+src/network.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/network.c.o
+.PHONY : src/network.c.o
+
+src/network.i: src/network.c.i
+.PHONY : src/network.i
+
+# target to preprocess a source file
+src/network.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/network.c.i
+.PHONY : src/network.c.i
+
+src/network.s: src/network.c.s
+.PHONY : src/network.s
+
+# target to generate assembly for a file
+src/network.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/network.c.s
+.PHONY : src/network.c.s
+
+src/pack.o: src/pack.c.o
+.PHONY : src/pack.o
+
+# target to build an object file
+src/pack.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/pack.c.o
+.PHONY : src/pack.c.o
+
+src/pack.i: src/pack.c.i
+.PHONY : src/pack.i
+
+# target to preprocess a source file
+src/pack.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/pack.c.i
+.PHONY : src/pack.c.i
+
+src/pack.s: src/pack.c.s
+.PHONY : src/pack.s
+
+# target to generate assembly for a file
+src/pack.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/pack.c.s
+.PHONY : src/pack.c.s
+
+src/server.o: src/server.c.o
+.PHONY : src/server.o
+
+# target to build an object file
+src/server.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/server.c.o
+.PHONY : src/server.c.o
+
+src/server.i: src/server.c.i
+.PHONY : src/server.i
+
+# target to preprocess a source file
+src/server.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/server.c.i
+.PHONY : src/server.c.i
+
+src/server.s: src/server.c.s
+.PHONY : src/server.s
+
+# target to generate assembly for a file
+src/server.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/server.c.s
+.PHONY : src/server.c.s
+
+src/server2.o: src/server2.c.o
+.PHONY : src/server2.o
+
+# target to build an object file
+src/server2.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/server2.c.o
+.PHONY : src/server2.c.o
+
+src/server2.i: src/server2.c.i
+.PHONY : src/server2.i
+
+# target to preprocess a source file
+src/server2.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/server2.c.i
+.PHONY : src/server2.c.i
+
+src/server2.s: src/server2.c.s
+.PHONY : src/server2.s
+
+# target to generate assembly for a file
+src/server2.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/server2.c.s
+.PHONY : src/server2.c.s
+
+src/sol.o: src/sol.c.o
+.PHONY : src/sol.o
+
+# target to build an object file
+src/sol.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/sol.c.o
+.PHONY : src/sol.c.o
+
+src/sol.i: src/sol.c.i
+.PHONY : src/sol.i
+
+# target to preprocess a source file
+src/sol.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/sol.c.i
+.PHONY : src/sol.c.i
+
+src/sol.s: src/sol.c.s
+.PHONY : src/sol.s
+
+# target to generate assembly for a file
+src/sol.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/sol.c.s
+.PHONY : src/sol.c.s
+
+src/trie.o: src/trie.c.o
+.PHONY : src/trie.o
+
+# target to build an object file
+src/trie.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/trie.c.o
+.PHONY : src/trie.c.o
+
+src/trie.i: src/trie.c.i
+.PHONY : src/trie.i
+
+# target to preprocess a source file
+src/trie.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/trie.c.i
+.PHONY : src/trie.c.i
+
+src/trie.s: src/trie.c.s
+.PHONY : src/trie.s
+
+# target to generate assembly for a file
+src/trie.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/trie.c.s
+.PHONY : src/trie.c.s
+
+src/util.o: src/util.c.o
+.PHONY : src/util.o
+
+# target to build an object file
+src/util.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/util.c.o
+.PHONY : src/util.c.o
+
+src/util.i: src/util.c.i
+.PHONY : src/util.i
+
+# target to preprocess a source file
+src/util.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/util.c.i
+.PHONY : src/util.c.i
+
+src/util.s: src/util.c.s
+.PHONY : src/util.s
+
+# target to generate assembly for a file
+src/util.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mqttuv.dir/build.make CMakeFiles/mqttuv.dir/src/util.c.s
+.PHONY : src/util.c.s
 
 # Help Target
 help:
@@ -431,34 +424,44 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
-	@echo "... install"
-	@echo "... install/local"
-	@echo "... install/strip"
-	@echo "... list_install_components"
-	@echo "... package"
-	@echo "... package_source"
 	@echo "... rebuild_cache"
-	@echo "... MQTTPacketClient"
-	@echo "... MQTTPacketServer"
-	@echo "... client_test1"
-	@echo "... hello"
 	@echo "... mqttuv"
-	@echo "... paho-embed-mqtt3c"
-	@echo "... paho-embed-mqtt3cc"
-	@echo "... pub0sub1"
-	@echo "... pub0sub1_nb"
-	@echo "... qos0pub"
-	@echo "... stdoutsub"
-	@echo "... stdoutsubc"
-	@echo "... test1"
-	@echo "... testc1"
-	@echo "... testcpp1"
-	@echo "... client_test.o"
-	@echo "... client_test.i"
-	@echo "... client_test.s"
-	@echo "... main.o"
-	@echo "... main.i"
-	@echo "... main.s"
+	@echo "... src/config.o"
+	@echo "... src/config.i"
+	@echo "... src/config.s"
+	@echo "... src/core.o"
+	@echo "... src/core.i"
+	@echo "... src/core.s"
+	@echo "... src/hashtable.o"
+	@echo "... src/hashtable.i"
+	@echo "... src/hashtable.s"
+	@echo "... src/list.o"
+	@echo "... src/list.i"
+	@echo "... src/list.s"
+	@echo "... src/mqtt.o"
+	@echo "... src/mqtt.i"
+	@echo "... src/mqtt.s"
+	@echo "... src/network.o"
+	@echo "... src/network.i"
+	@echo "... src/network.s"
+	@echo "... src/pack.o"
+	@echo "... src/pack.i"
+	@echo "... src/pack.s"
+	@echo "... src/server.o"
+	@echo "... src/server.i"
+	@echo "... src/server.s"
+	@echo "... src/server2.o"
+	@echo "... src/server2.i"
+	@echo "... src/server2.s"
+	@echo "... src/sol.o"
+	@echo "... src/sol.i"
+	@echo "... src/sol.s"
+	@echo "... src/trie.o"
+	@echo "... src/trie.i"
+	@echo "... src/trie.s"
+	@echo "... src/util.o"
+	@echo "... src/util.i"
+	@echo "... src/util.s"
 .PHONY : help
 
 
