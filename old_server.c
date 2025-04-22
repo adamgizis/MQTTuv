@@ -383,8 +383,8 @@ static int subscribe_handler(struct closure *cb, union mqtt_packet *pkt) {
         }
 
         // Clean session true for now
-        topic_add_subscriber(t, cb->obj, pkt->subscribe.tuples[i].qos, true);
-
+        (t, cb->obj, pkt->subscribe.tuples[i].qos, true);
+topic_add_subscriber
         if (alloced)
             sol_free(topic);
 

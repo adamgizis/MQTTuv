@@ -16,6 +16,7 @@
  #include "hashtable.h"
  #include <uv.h> 
  #include <stdlib.h>
+ #include <assert.h>
  /*
   * General informations of the broker, all fields will be published
   * periodically to internal topics
@@ -100,45 +101,46 @@ This is my  attempt at the parse
 
     // IF ALREADY IN HASHTABLE DISCONNECT THE STREAM AND DELETE
     // TODO just return error_code and handle it on `on_read`
-    // if (hashtable_exists(sol.clients,
-    //     (const char *) pkt->connect.payload.client_id)) {
+    if (hashtable_exists(sol.clients,
+        (const char *) pkt->connect.payload.client_id)) {
 
-    //     // Already connected client, 2 CONNECT packet should be interpreted as
-    //     // a violation of the protocol, causing disconnection of the client
+        // Already connected client, 2 CONNECT packet should be interpreted as
+        // a violation of the protocol, causing disconnection of the client
 
-    //     sol_info("Received double CONNECT from %s, disconnecting client",
-    //     pkt->connect.payload.client_id);
-    //     hashtable_del(sol.clients, (const char *) pkt->connect.payload.client_id);
+        sol_info("Received double CONNECT from %s, disconnecting client",
+        pkt->connect.payload.client_id);
+        hashtable_del(sol.clients, (const char *) pkt->connect.payload.client_id);
 
-    //     // Update stats
-    //     info.nclients--;
-    //     info.nconnections--;
+        // Update stats
+        info.nclients--;
+        info.nconnections--;
 
-    //     return -1;
-    //     }
+        return -1;
+        }
 
         // create a new client and add to the hashtable
         printf("in connect \n");
 
 
+        struct sol_client *new_client = sol_malloc(sizeof(*new_client));
 
-
-        // struct sol_client *new_client = sol_malloc(sizeof(*new_client));
-
-        // printf("here");
-        // const char *cid = (const char *) pkt->connect.payload.client_id;
-        // new_client->client_id = sol_strdup(cid);
+        printf("here");
+        const char *cid = (const char *) pkt->connect.payload.client_id;
+        //assert(pkt != NULL);
+        //assert(pkt->connect != NULL);
+        assert(pkt->connect.payload.client_id != NULL);
+        new_client->client_id = sol_strdup(cid);
 
         // printf("created new client\n");
-        // hashtable_put(sol.clients, cid, new_client);
+        hashtable_put(sol.clients, cid, new_client);
         // printf("added to hastable\n");
-        // if (pkt->connect.bits.clean_session == false){
-        //     new_client->session.subscriptions = list_create(NULL);
-        // }
+        if (pkt->connect.bits.clean_session == false){
+            new_client->session.subscriptions = list_create(NULL);
+        }
 
-        // if (pkt->connect.bits.clean_session == false)
-        //     new_client->session.subscriptions = list_create(NULL);
-        // printf("connecting\n");
+        if (pkt->connect.bits.clean_session == false)
+            new_client->session.subscriptions = list_create(NULL);
+        printf("connecting\n");
         /* Record the new client connected */
 
         // send back a connack messgae 
