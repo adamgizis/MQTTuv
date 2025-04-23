@@ -3,9 +3,6 @@
  #include <errno.h>
  #include <unistd.h>
  #include <string.h>
- #include <arpa/inet.h>
- #include <sys/socket.h>
- #include <sys/epoll.h>
  #include "mqtt.h"
  #include "util.h"
  #include "pack.h"
@@ -45,6 +42,7 @@
  static void alloc_buffer(uv_handle_t *, size_t , uv_buf_t *);
  // write2
  static void write2(uv_stream_t* , char *, int);
+ static void write2subs(struct subscriber*, union mqtt_packet *);
  
  /* Command handler, each one have responsibility over a defined command packet */
  static int connect_handler(uv_stream_t* , union mqtt_packet *);
@@ -125,10 +123,8 @@ This is my  attempt at the parse
 
         printf("here");
         const char *cid = (const char *) pkt->connect.payload.client_id;
-        //assert(pkt != NULL);
-        //assert(pkt->connect != NULL);
-        assert(pkt->connect.payload.client_id != NULL);
         new_client->client_id = sol_strdup(cid);
+        new_client->stream = client;
 
         // printf("created new client\n");
         ht_put_client(&mqttuv.clients, new_client);
@@ -162,6 +158,38 @@ This is my  attempt at the parse
      
  }
 
+ static int publish_handler(uv_stream_t* client, union mqtt_packet *pkt){
+        // TODO ADD QOS logic
+        // TODO switch from hashmap to trie to allow / publishing
+    
+        // check if topic already exists
+        // else create a new topic
+        // send message to all of the subscribers
+        char *top = (char *) pkt->publish.topic;
+        bool alloced = false;
+        unsigned char qos = pkt->publish.header.bits.qos;
+        struct topic* topic = ht_find_topic(mqttuv.topics,(const char *) top);
+        if(topic == NULL){
+            topic->name = sol_strdup(top);
+            topic->head = NULL;
+            // add to hashmap
+            ht_put_topic(&mqttuv.topics, topic);
+        }
+
+        write2subs(topic->head, pkt);
+ }
+
+static void write2subs(struct subscriber* head, union mqtt_packet *pkt){
+    int  publen = MQTT_HEADER_LEN + sizeof(uint16_t) + pkt->publish.topiclen + pkt->publish.payloadlen;
+    char* p;
+    struct subscriber* tmp = head;
+    while(tmp != NULL){
+        pkt->publish.header.bits.qos = tmp->qos;
+        p = pack_mqtt_packet(pkt, PUBLISH);
+        write2(tmp->client->stream, p, MQTT_ACK_LEN);
+        tmp = tmp->next;
+    }
+}
 
  static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf){
     buf->base = sol_malloc(conf->max_request_size);
@@ -236,11 +264,11 @@ static void on_write(uv_write_t* req,  int status){
  
  
  
- 
  int start_server(const char *addr, const char *port) {
  
     /* Initialize global Sol instance */
     mqttuv.clients = NULL;
+    mqttuv.topics = NULL;
     uv_loop_t *loop = uv_default_loop();
     uv_tcp_t *server = malloc(sizeof(uv_tcp_t));
 
