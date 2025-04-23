@@ -32,6 +32,12 @@
 
 // Default parameters
 
+
+// networking
+#define UNIX    0
+#define INET    1
+
+
 #define VERSION                     "0.3.5"
 #define DEFAULT_SOCKET_FAMILY       INET
 #define DEFAULT_LOG_LEVEL           DEBUG
@@ -42,7 +48,6 @@
 #define DEFAULT_MAX_MEMORY          "2GB"
 #define DEFAULT_MAX_REQUEST_SIZE    "2MB"
 #define DEFAULT_STATS_INTERVAL      "10s"
-
 
 struct config {
     /* Sol version <MAJOR.MINOR.PATCH> */

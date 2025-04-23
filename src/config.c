@@ -32,7 +32,6 @@
 #include <sys/eventfd.h>
 #include "util.h"
 #include "config.h"
-#include "network.h"
 
 
 /* The main configuration structure */

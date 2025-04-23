@@ -6,16 +6,15 @@
  #include <arpa/inet.h>
  #include <sys/socket.h>
  #include <sys/epoll.h>
- #include "network.h"
  #include "mqtt.h"
  #include "util.h"
  #include "pack.h"
  #include "core.h"
  #include "config.h"
  #include "server.h"
- #include "hashtable.h"
  #include <uv.h> 
  #include <stdlib.h>
+ #include "uthash.h"
  #include <assert.h>
  /*
   * General informations of the broker, all fields will be published
@@ -24,7 +23,7 @@
  static struct sol_info info;
  
  /* Broker global instance, contains the topic trie and the clients hashtable */
- static struct sol sol;
+ static struct info mqttuv;
 
  // global event loop
  struct uv_loop_t* loop;
@@ -101,7 +100,7 @@ This is my  attempt at the parse
 
     // IF ALREADY IN HASHTABLE DISCONNECT THE STREAM AND DELETE
     // TODO just return error_code and handle it on `on_read`
-    if (hashtable_exists(sol.clients,
+    if (ht_find_client(mqttuv.clients,
         (const char *) pkt->connect.payload.client_id)) {
 
         // Already connected client, 2 CONNECT packet should be interpreted as
@@ -109,7 +108,7 @@ This is my  attempt at the parse
 
         sol_info("Received double CONNECT from %s, disconnecting client",
         pkt->connect.payload.client_id);
-        hashtable_del(sol.clients, (const char *) pkt->connect.payload.client_id);
+        ht_delete_client(&mqttuv.clients, (const char *) pkt->connect.payload.client_id);
 
         // Update stats
         info.nclients--;
@@ -122,7 +121,7 @@ This is my  attempt at the parse
         printf("in connect \n");
 
 
-        struct sol_client *new_client = sol_malloc(sizeof(*new_client));
+        struct client *new_client = sol_malloc(sizeof(*new_client));
 
         printf("here");
         const char *cid = (const char *) pkt->connect.payload.client_id;
@@ -132,7 +131,7 @@ This is my  attempt at the parse
         new_client->client_id = sol_strdup(cid);
 
         // printf("created new client\n");
-        hashtable_put(sol.clients, cid, new_client);
+        ht_put_client(&mqttuv.clients, new_client);
         // printf("added to hastable\n");
         if (pkt->connect.bits.clean_session == false){
             new_client->session.subscriptions = list_create(NULL);
@@ -235,38 +234,13 @@ static void on_write(uv_write_t* req,  int status){
     //free(buf->base);
  }
  
-
-
-
- /*
-  * Cleanup function to be passed in as destructor to the Hashtable for
-  * connecting clients
-  */
- static int client_destructor(struct hashtable_entry *entry) {
- 
-     if (!entry)
-         return -1;
- 
-     struct sol_client *client = entry->val;
- 
-     if (client->client_id)
-         sol_free(client->client_id);
- 
-     buffer_release(&client->buf);
- 
-     sol_free(client);
- 
-     return 0;
- }
  
  
  
  int start_server(const char *addr, const char *port) {
  
     /* Initialize global Sol instance */
-    trie_init(&sol.topics);
-    sol.clients = hashtable_create(client_destructor);
-    sol.closures = NULL;
+    mqttuv.clients = NULL;
     uv_loop_t *loop = uv_default_loop();
     uv_tcp_t *server = malloc(sizeof(uv_tcp_t));
 
@@ -304,9 +278,6 @@ static void on_write(uv_write_t* req,  int status){
     uv_run(loop, UV_RUN_DEFAULT);
 
     // cleanup this is probably going to have to move somewhere else
-    hashtable_release(sol.clients);
-    hashtable_release(sol.closures);
-
     sol_info("Sol v%s exiting", VERSION);
 
     return 0;

@@ -6,7 +6,7 @@ PORT = 7000
 def on_connect(client, userdata, flags, rc):
     print("Connected to broker with return code:", rc)
 
-client = mqtt.Client()  # MQTT v3.1.1 client by default
+client = mqtt.Client(client_id = "hello")  # MQTT v3.1.1 client by default
 
 client.on_connect = on_connect
 
