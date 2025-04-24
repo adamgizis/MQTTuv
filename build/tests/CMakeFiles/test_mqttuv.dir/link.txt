@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/test_mqttuv.dir/test_trie.c.o -o test_mqttuv  -luv -lpthread -ldl -lrt -luuid 
