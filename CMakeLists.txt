@@ -3,27 +3,25 @@ project(mqttuv C)
 
 set(CMAKE_C_STANDARD 11)
 
-# Find libuv
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBUV REQUIRED libuv)
 
-# Add include directories from libuv pkg-config
-include_directories(${LIBUV_INCLUDE_DIRS})
-link_directories(${LIBUV_LIBRARY_DIRS})
 
-# Collect all source files in src/
+include_directories(${LIBUV_INCLUDE_DIRS})
+include_directories(${CMAKE_SOURCE_DIR}/src)  
+
+
 file(GLOB SRC_FILES src/*.c)
 
-# Add sol.c as the main entry point
-set(MAIN_FILE src/sol.c)
+list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/src/sol.c)
 
-# Define the executable
-add_executable(mqttuv ${MAIN_FILE} ${SRC_FILES})
+# Main executable 
+add_executable(mqttuv src/sol.c ${SRC_FILES})
+target_link_libraries(mqttuv ${LIBUV_LIBRARIES} uuid)
 
-# Link necessary libraries
-target_link_libraries(mqttuv
-    ${LIBUV_LIBRARIES}
-    uuid
-)
+# Test executable (excludes sol.c)
+add_executable(test_trie tests/test_trie.c ${SRC_FILES})
+target_link_libraries(test_trie ${LIBUV_LIBRARIES} uuid)
 
 

@@ -50,10 +50,7 @@
   * Connection structure for private use of the module, mainly for accepting
   * new connections
   */
- struct connection {
-     char ip[INET_ADDRSTRLEN + 1];
-     int fd;
- };
+  void (*write2subs_fn)(struct subscriber *, union mqtt_packet *) = NULL;
  
  /*
 This is my  attempt at the parse
@@ -92,9 +89,9 @@ This is my  attempt at the parse
     *command = byte;
     return total_packet_size;  // Number of bytes parsed
 }
- 
- 
- static int connect_handler(uv_stream_t* client, union mqtt_packet *pkt) {
+
+
+static int connect_handler(uv_stream_t* client, union mqtt_packet *pkt) {
 
     // IF ALREADY IN HASHTABLE DISCONNECT THE STREAM AND DELETE
     // TODO just return error_code and handle it on `on_read`
@@ -130,11 +127,9 @@ This is my  attempt at the parse
         ht_put_client(&mqttuv.clients, new_client);
         // printf("added to hastable\n");
         if (pkt->connect.bits.clean_session == false){
-            new_client->session.subscriptions = list_create(NULL);
+            // new_client->session.subscriptions = list_create(NULL);
         }
 
-        if (pkt->connect.bits.clean_session == false)
-            new_client->session.subscriptions = list_create(NULL);
         printf("connecting\n");
         /* Record the new client connected */
 
@@ -155,31 +150,29 @@ This is my  attempt at the parse
         
         info.nclients++;
         info.nconnections++;
+
+        return 1;
      
  }
 
  static int publish_handler(uv_stream_t* client, union mqtt_packet *pkt){
-        // TODO ADD QOS logic
-        // TODO switch from hashmap to trie to allow / publishing
-    
-        // check if topic already exists
-        // else create a new topic
-        // send message to all of the subscribers
+        // // TODO ADD QOS logic
+        // TODO improper string (starts with $ or ends with # return failure)
+        (void) client;
         char *top = (char *) pkt->publish.topic;
-        bool alloced = false;
-        unsigned char qos = pkt->publish.header.bits.qos;
-        struct topic* topic = ht_find_topic(mqttuv.topics,(const char *) top);
-        if(topic == NULL){
-            topic->name = sol_strdup(top);
-            topic->head = NULL;
-            // add to hashmap
-            ht_put_topic(&mqttuv.topics, topic);
-        }
 
-        write2subs(topic->head, pkt);
+        publish(mqttuv.topics, top, pkt, 0 );
+        // TODO send back publish success or failure message to client based on what qos packet was sent with
+
+
+        return 1;
  }
 
 static void write2subs(struct subscriber* head, union mqtt_packet *pkt){
+    // this is how am i attempting to test
+    if (write2subs_fn) {
+        write2subs_fn(head, pkt); // Call whatever is assigned
+    } else{
     int  publen = MQTT_HEADER_LEN + sizeof(uint16_t) + pkt->publish.topiclen + pkt->publish.payloadlen;
     char* p;
     struct subscriber* tmp = head;
@@ -189,6 +182,7 @@ static void write2subs(struct subscriber* head, union mqtt_packet *pkt){
         write2(tmp->client->stream, p, MQTT_ACK_LEN);
         tmp = tmp->next;
     }
+}
 }
 
  static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf){
@@ -231,7 +225,7 @@ static void on_write(uv_write_t* req,  int status){
  }
 
 
- static void on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf){
+static void on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf){
     // parse the buffer
     // parse head send to 
     if (nread < 0) {
@@ -261,10 +255,111 @@ static void on_write(uv_write_t* req,  int status){
 
     //free(buf->base);
  }
+
+struct topic *get_or_create_child(struct topic *parent, const char *level) {
+    struct topic *cur = parent->children;
+
+    while (cur) {
+        // if at desired level return node
+        if (strcmp(cur->level, level) == 0)
+            return cur;
+        cur = cur->next;
+    }
+
+    // create a new node
+    struct topic *new_node = calloc(1, sizeof(struct topic));
+    new_node->level = strdup(level);
+
+    // i have questions about this
+    new_node->next = parent->children;
+    parent->children = new_node;
+    return new_node;
+}
+
+
+void insert_subscription(struct topic *root, const char *topic, struct client *client, int qos) {
+    char *dup = strdup(topic);
+
+    char *token = strtok(dup, "/");
+    struct topic *node = root;
+
+    while (token) {
+        // see if level exists or if else create a node
+        node = get_or_create_child(node, token);
+        
+        // if multilevel wildcard break, # must be the last character and we just treat as such if included
+        if (strcmp(token, "#") == 0)
+            break;
+        // contiune strtok to get next /
+        token = strtok(NULL, "/");
+    }
+
+    // create a subscriber 
+    struct subscriber *sub = calloc(1, sizeof(struct subscriber));
+    
+    sub->client = client;
+    sub->qos = qos;
+
+
+    // add to front of linked list
+    sub->next = node->subscribers;
+    node->subscribers = sub;
+
+    free(dup);
+}
+
+
+void publish_recursive(struct topic *node, char **levels, int depth, int max_depth, union mqtt_packet *pkt, int test) {
+    if (!node) return;
+    int result = strcmp(node->level, "#");
+    // deliver if i'm at the lest depth or to wild card
+    if (depth == max_depth || strcmp(node->level, "#") == 0) {
+        if(test == 1){
+            printf("Delivering message to client \n");
+        }
+        else{
+            // give write2 subs the head
+            write2subs(node->subscribers, pkt);
+        }
+    }
+
+
+    for (struct topic *child = node->children; child; child = child->next) {
+        // send to all childern of below
+        if (strcmp(child->level, "#") == 0) {
+            publish_recursive(child, levels, max_depth, max_depth, pkt,test);
+        } else if (strcmp(child->level, levels[depth]) == 0 || strcmp(child->level, "+") == 0) {
+            publish_recursive(child, levels, depth + 1, max_depth, pkt,test);
+        }
+    }
+
+    return;
+    
+}
+
+void publish(struct topic *root, const char *topic, union mqtt_packet *pkt, int test) {
+    char *dup = strdup(topic); // get the full topic
+    char *levels[16]; // get all the tokens and add to list of llevel
+    int depth = 0;
+
+    char *token = strtok(dup, "/");
+    while (token && depth < 16) {
+        levels[depth++] = token;
+        token = strtok(NULL, "/");
+    }
+
+    // loop through the childern of the root
+    for (struct topic *child = root->children; child; child = child->next) {
+        // if match to one of the levels or
+        if (strcmp(child->level, levels[0]) == 0 || strcmp(child->level, "#") == 0) {
+            publish_recursive(child, levels, 1, depth, pkt, test);
+        }
+    }
+
+    free(dup);
+}
  
- 
- 
- int start_server(const char *addr, const char *port) {
+int start_server(const char *addr, const char *port) {
  
     /* Initialize global Sol instance */
     mqttuv.clients = NULL;

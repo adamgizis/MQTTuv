@@ -1,5 +1,6 @@
 #ifndef SERVER_H
 #define SERVER_H
+#include "mqtt.h"
 
 /* Error codes for packet reception, signaling respectively
  * - client disconnection
@@ -56,6 +57,11 @@ typedef enum {
 
 
 int start_server(const char *, const char *);
+// Publishing and subscribing to 
+struct topic *get_or_create_child(struct topic *, const char *);
+void publish(struct topic *, const char *, union mqtt_packet *, int );
+void publish_recursive(struct topic *, char **, int , int , union mqtt_packet *, int );
+void insert_subscription(struct topic *, const char *, struct client *, int );
 
 
 #endif
