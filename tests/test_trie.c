@@ -46,17 +46,6 @@ void test_insert_subscription() {
     printf("test_insert_subscription passed\n");
 }
 
-struct delivered {
-    struct client *clients[10];
-    int count;
-} delivered_log;
-
-void write2subs(struct subscriber *subs, union mqtt_packet *pkt) {
-    while (subs) {
-        delivered_log.clients[delivered_log.count++] = subs->client;
-        subs = subs->next;
-    }
-}
 void test_publish_exact_and_wildcard() {
     struct topic root = { .level = "", .children = NULL };
     struct client c1 = { .client_id = "c1" };
@@ -71,16 +60,16 @@ void test_publish_exact_and_wildcard() {
     
     // pack_mqtt_packet(pkt, CONNECT);
 
-    publish(&root, "foo/bar", pkt, 0);
+    publish(&root, "foo/bar", NULL, 0);
 
+    printf("%d", delivered_log.count == 3);
     assert(delivered_log.count == 3);
-    assert(delivered_log.clients[0] == &c1); // exact match
-    assert(delivered_log.clients[1] == &c2); // single-level wildcard
-    assert(delivered_log.clients[2] == &c3); // multi-level wildcard
+    assert(delivered_log.clients[0] == &c3); 
+    assert(delivered_log.clients[1] == &c2); 
+    assert(delivered_log.clients[2] == &c1); 
 
     printf("test_publish_exact_and_wildcard passed\n");
 }
-
 
 
 

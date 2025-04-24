@@ -79,6 +79,10 @@ int main (int argc, char **argv) {
     // Print configuration
     config_print();
 
+    
+
+    
+
     start_server(conf->hostname, conf->port);
 
     return 0;

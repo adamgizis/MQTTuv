@@ -23,5 +23,5 @@ target_link_libraries(mqttuv ${LIBUV_LIBRARIES} uuid)
 # Test executable (excludes sol.c)
 add_executable(test_trie tests/test_trie.c ${SRC_FILES})
 target_link_libraries(test_trie ${LIBUV_LIBRARIES} uuid)
-
+target_compile_definitions(test_trie PRIVATE TESTING)
 

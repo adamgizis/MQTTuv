@@ -26,6 +26,13 @@ struct client {
     UT_hash_handle hh; /* makes this structure hashable */
 };
 
+// for testing trie
+struct delivered {
+    struct client *clients[10];
+    int count;
+};
+
+extern struct delivered delivered_log;
 
 struct topic{
     char *level;

@@ -33,6 +33,9 @@
   * - Read incoming bytes from connected clients
   * - Write output bytes to connected clients
   */
+  struct delivered delivered_log = {0};
+
+
  
  static void on_accept( uv_stream_t *, int);
  static void on_read(uv_stream_t* , ssize_t, const uv_buf_t*);
@@ -46,11 +49,7 @@
  
  /* Command handler, each one have responsibility over a defined command packet */
  static int connect_handler(uv_stream_t* , union mqtt_packet *);
- /*
-  * Connection structure for private use of the module, mainly for accepting
-  * new connections
-  */
-  void (*write2subs_fn)(struct subscriber *, union mqtt_packet *) = NULL;
+
  
  /*
 This is my  attempt at the parse
@@ -168,11 +167,22 @@ static int connect_handler(uv_stream_t* client, union mqtt_packet *pkt) {
         return 1;
  }
 
+#ifdef TESTING
+void write2subs(struct subscriber *subs, union mqtt_packet *pkt) {
+    
+    while (subs) {
+        delivered_log.clients[delivered_log.count++] = subs->client;
+        subs = subs->next;
+    }
+
+}
+#else
 static void write2subs(struct subscriber* head, union mqtt_packet *pkt){
-    // this is how am i attempting to test
-    if (write2subs_fn) {
-        write2subs_fn(head, pkt); // Call whatever is assigned
-    } else{
+
+    if(pkt == NULL){
+        printf("correctly writing to subs in test\n");
+        return;
+    }
     int  publen = MQTT_HEADER_LEN + sizeof(uint16_t) + pkt->publish.topiclen + pkt->publish.payloadlen;
     char* p;
     struct subscriber* tmp = head;
@@ -183,7 +193,7 @@ static void write2subs(struct subscriber* head, union mqtt_packet *pkt){
         tmp = tmp->next;
     }
 }
-}
+#endif
 
  static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf){
     buf->base = sol_malloc(conf->max_request_size);
