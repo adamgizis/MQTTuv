@@ -13,6 +13,7 @@
  #include <stdlib.h>
  #include "uthash.h"
  #include <assert.h>
+ #include "trie.h"
  /*
   * General informations of the broker, all fields will be published
   * periodically to internal topics
@@ -34,8 +35,6 @@
   * - Write output bytes to connected clients
   */
   struct delivered delivered_log = {0};
-
-
  
  static void on_accept( uv_stream_t *, int);
  static void on_read(uv_stream_t* , ssize_t, const uv_buf_t*);
@@ -49,6 +48,8 @@
  
  /* Command handler, each one have responsibility over a defined command packet */
  static int connect_handler(uv_stream_t* , union mqtt_packet *);
+ static int subscribe_handler(uv_stream_t* , union mqtt_packet *);
+ static int publish_handler(uv_stream_t* , union mqtt_packet *);
 
  
  /*
@@ -167,6 +168,28 @@ static int connect_handler(uv_stream_t* client, union mqtt_packet *pkt) {
         return 1;
  }
 
+static int subscribe_handler(uv_stream_t* client, union mqtt_packet *pkt){
+    // TODO add QOS logic 
+    // send back success and failure messages etc
+    struct client *client_info = ht_find_client(mqttuv.clients,(const char *) pkt->connect.payload.client_id);
+
+    if (!client_info){
+        int qos = pkt->publish.header.bits.qos;
+        insert_subscription(mqttuv.topics, (char *) pkt->publish.topic, client_info, qos);
+    }else{
+        printf("hashmap failed\n");
+    }
+}
+
+static int unsubscribe_handler(uv_stream_t* client, union mqtt_packet *pkt){
+    struct client *client_info = ht_find_client(mqttuv.clients,(const char *) pkt->connect.payload.client_id);
+    if (!client_info){
+        int qos = pkt->publish.header.bits.qos;
+        unsubscribe(mqttuv.topics, (const char *) pkt->publish.topic, client_info);
+    }else{
+        printf("hashmap failed\n");
+    }
+}
 #ifdef TESTING
 void write2subs(struct subscriber *subs, union mqtt_packet *pkt) {
     
@@ -261,6 +284,10 @@ static void on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf){
         case(MQTT_CONNECT):
             // pass in the client stream, and the packet to the specfic handler
             connect_handler(client, &packet);
+        case(MQTT_SUBSCRIBE):
+            subscribe_handler(client, &packet);
+        case(MQTT_PUBLISH):
+            publish_handler(client, &packet);
     }
 
     //free(buf->base);

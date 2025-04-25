@@ -1,5 +1,7 @@
 import paho.mqtt.client as mqtt
 
+## Test to comfirm MQTT recieves connect and replies with a CONNACK
+
 BROKER = "localhost"
 PORT = 7000
 
@@ -12,3 +14,5 @@ client.on_connect = on_connect
 
 client.connect(BROKER, PORT)
 client.loop_forever()
+
+

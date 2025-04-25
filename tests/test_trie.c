@@ -13,6 +13,7 @@
 #include "../src/uthash.h"
 #include <assert.h>
 #include "../src/mqtt.h"
+#include "../src/trie.h"
 
 
 void test_get_or_create_child() {
