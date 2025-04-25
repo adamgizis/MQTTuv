@@ -1,1 +1,0 @@
-/usr/bin/cc CMakeFiles/test_trie.dir/tests/test_trie.c.o CMakeFiles/test_trie.dir/src/config.c.o CMakeFiles/test_trie.dir/src/core.c.o CMakeFiles/test_trie.dir/src/mqtt.c.o CMakeFiles/test_trie.dir/src/pack.c.o CMakeFiles/test_trie.dir/src/server.c.o CMakeFiles/test_trie.dir/src/util.c.o -o test_trie  -luv -lpthread -ldl -lrt -luuid 

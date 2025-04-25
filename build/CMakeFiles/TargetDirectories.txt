@@ -1,4 +1,0 @@
-/local/MQTTuv/build/CMakeFiles/mqttuv.dir
-/local/MQTTuv/build/CMakeFiles/test_trie.dir
-/local/MQTTuv/build/CMakeFiles/edit_cache.dir
-/local/MQTTuv/build/CMakeFiles/rebuild_cache.dir

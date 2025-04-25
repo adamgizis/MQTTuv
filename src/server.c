@@ -171,6 +171,7 @@ static int connect_handler(uv_stream_t* client, union mqtt_packet *pkt) {
 static int subscribe_handler(uv_stream_t* client, union mqtt_packet *pkt){
     // TODO add QOS logic 
     // send back success and failure messages etc
+    printf("%s", pkt->connect.payload.client_id);
     struct client *client_info = ht_find_client(mqttuv.clients,(const char *) pkt->connect.payload.client_id);
 
     if (!client_info){
@@ -279,15 +280,20 @@ static void on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf){
     union mqtt_packet packet;
     unpack_mqtt_packet((unsigned char *)buf->base, &packet);
     union mqtt_header hdr = { .byte = command };
-    printf("command %d\n", command);
-    switch(command >> 4){
+
+    
+    switch((unsigned int) command >> 4){
         case(MQTT_CONNECT):
             // pass in the client stream, and the packet to the specfic handler
             connect_handler(client, &packet);
+            break;
         case(MQTT_SUBSCRIBE):
+            printf("somehow command subscribe");
             subscribe_handler(client, &packet);
+            break;
         case(MQTT_PUBLISH):
             publish_handler(client, &packet);
+            break;
     }
 
     //free(buf->base);
