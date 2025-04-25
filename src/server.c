@@ -368,7 +368,48 @@ void publish(struct topic *root, const char *topic, union mqtt_packet *pkt, int 
 
     free(dup);
 }
- 
+
+
+
+void unsubscribe(struct topic *root, const char *topic, struct client *client) {
+    // TODO - if a topic has no subscribers get rid of it 
+    char *dup = strdup(topic);
+    char *token = strtok(dup, "/");
+
+    struct topic *node = root;
+
+    while (token) {
+        struct topic *child = node->children;
+        while (child && strcmp(child->level, token) != 0) {
+            child = child->next;
+        }
+        if (!child) {
+            // case not found
+            free(dup);
+            return;
+        }
+        node = child;
+
+        if (strcmp(token, "#") == 0)
+            break;
+
+        token = strtok(NULL, "/");
+    }
+
+    // remove from susbscriber list
+    struct subscriber **cur = &node->subscribers;
+    while (*cur) {
+        if ((*cur)->client == client) {
+            struct subscriber *to_free = *cur;
+            *cur = (*cur)->next;
+            free(to_free);
+            break;
+        }
+        cur = &(*cur)->next;
+    }
+
+    free(dup);
+}
 int start_server(const char *addr, const char *port) {
  
     /* Initialize global Sol instance */
