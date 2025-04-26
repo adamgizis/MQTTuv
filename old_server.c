@@ -481,8 +481,7 @@ static int publish_handler(struct closure *cb, union mqtt_packet *pkt) {
     struct list_node *cur = t->subscribers->head;
     for (; cur; cur = cur->next) {
 
-        publen = MQTT_HEADER_LEN + sizeof(uint16_t) +
-            pkt->publish.topiclen + pkt->publish.payloadlen;
+=
 
         struct subscriber *sub = cur->data;
         struct sol_client *sc = sub->client;

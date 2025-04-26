@@ -127,6 +127,8 @@ static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
         // TODO improper string (starts with $ or ends with # return failure)
         (void) client;
         char *top = (char *) pkt->publish.topic;
+        printf("%s", pkt->publish.payload);
+
 
         publish(mqttuv.topics, top, pkt, 0 );
         // TODO send back publish success or failure message to client based on what qos packet was sent with
@@ -147,11 +149,11 @@ static int subscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
         unsigned char rcs[pkt->subscribe.tuples_len];
         printf("got the client from the hashmap\n");
         for (unsigned i = 0; i < pkt->subscribe.tuples_len; i++) {
-    
-            int qos = pkt->publish.header.bits.qos;
+            int qos = pkt->subscribe.header.bits.qos;
             printf("associated qos %d\n", qos);
             char *topic = (char *) pkt->subscribe.tuples[i].topic;
             printf("topic %s\n", topic);
+            rcs[i] = qos;
             insert_subscription(mqttuv.topics, (char *) topic, client_info, qos);
         }
 
@@ -192,19 +194,27 @@ void write2subs(struct subscriber *subs, union mqtt_packet *pkt) {
 #else
 static void write2subs(struct subscriber* head, union mqtt_packet *pkt){
 
+    printf("Received PUBLISH (d%i, q%u, r%i, m%u, %s, ... (%i bytes))",pkt->publish.header.bits.dup, pkt->publish.header.bits.qos, pkt->publish.header.bits.retain,pkt->publish.pkt_id, pkt->publish.topic, pkt->publish.payloadlen);
+
+
     if(pkt == NULL){
         printf("correctly writing to subs in test\n");
         return;
     }
-    int  publen = MQTT_HEADER_LEN + sizeof(uint16_t) + pkt->publish.topiclen + pkt->publish.payloadlen;
+    size_t publen;
     char* p;
     struct subscriber* tmp = head;
     while(tmp != NULL){
+
+        printf("sending to %s\n", tmp->client->client_id);
+        publen = MQTT_HEADER_LEN + sizeof(uint16_t) + pkt->publish.topiclen + pkt->publish.payloadlen;
         pkt->publish.header.bits.qos = tmp->qos;
         p = pack_mqtt_packet(pkt, PUBLISH);
-        write2(tmp->client->stream, p, MQTT_ACK_LEN);
+        write2(tmp->client->stream, p, publen);
+        free(p);
         tmp = tmp->next;
     }
+    
 }
 #endif
 
@@ -217,6 +227,7 @@ static void write2subs(struct subscriber* head, union mqtt_packet *pkt){
     uv_buf_t buffer[] = {
         {.base = data, .len = len2}
     };
+    
     uv_write_t *req = malloc(sizeof(uv_write_t));
     uv_write(req, stream, buffer, 1, on_write);
 }
@@ -250,6 +261,10 @@ static void on_write(uv_write_t* req,  int status){
 
 
 static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
+
+    // TODO - ACCEPT multiple packets in one stream
+
+
     // parse the buffer
     // parse head send to 
     if (nread < 0) {
@@ -283,11 +298,10 @@ static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
             subscribe_handler( stream, &packet);
             break;
         case PUBLISH:
+            printf("publish!\n");
             publish_handler(stream, &packet);
             break;
     }
-
-
 
     //free(buf->base);
  }
