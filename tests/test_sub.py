@@ -7,8 +7,7 @@ TOPIC = "a/b"
 def on_connect(client, userdata, flags, rc):
     print("Connected to broker with return code:", rc)
     if rc == 0:
-        print("Subscribing to topic:", TOPIC)
-        client.subscribe(TOPIC)
+        client.subscribe((TOPIC, 0))  # Now subscribing after successful connection
     else:
         print("Failed to connect")
 
@@ -18,7 +17,7 @@ def on_subscribe(client, userdata, mid, granted_qos):
 def on_message(client, userdata, msg):
     print(f"Received message on topic {msg.topic}: {msg.payload.decode()}")
 
-client = mqtt.Client(client_id="hello")
+client = mqtt.Client(client_id="hello2")
 client.on_connect = on_connect
 client.on_subscribe = on_subscribe
 client.on_message = on_message
