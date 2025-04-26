@@ -52,46 +52,9 @@
  static int publish_handler(uv_stream_t* , union mqtt_packet *);
 
  
- /*
-This is my  attempt at the parse
-  */
-  static ssize_t parse_packet(const unsigned char *input_buf, size_t input_len, char *command) {
-    if (input_len < 2)  // header and 
-        return -ERRPACKETERR;
-
-    size_t offset = 0;
-    unsigned char byte = input_buf[offset++];
-    
-    //
-    if ((byte >> 4) > DISCONNECT || (byte >> 4) < CONNECT)
-        return -ERRPACKETERR;
 
 
-    unsigned char buff[4];
-    int count = 0;
-    do {
-        if (offset >= input_len || count >= 4) 
-            return -ERRPACKETERR;
-        buff[count++] = input_buf[offset++];
-    } while (buff[count - 1] & (1 << 7));
-
-    const unsigned char *pbuf = buff;
-    unsigned long long tlen = mqtt_decode_length(&pbuf);
-
-    if (tlen > conf->max_request_size)
-        return -ERRMAXREQSIZE;
-
-    size_t total_packet_size = offset + tlen;
-    if (total_packet_size > input_len)
-        return -ERRPACKETERR;
-
-    // command is the first byte used to send to correct handler
-    *command = byte;
-    return total_packet_size;  // Number of bytes parsed
-}
-
-
-static int connect_handler(uv_stream_t* client, union mqtt_packet *pkt) {
+static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
 
     // IF ALREADY IN HASHTABLE DISCONNECT THE STREAM AND DELETE
     // TODO just return error_code and handle it on `on_read`
@@ -117,14 +80,18 @@ static int connect_handler(uv_stream_t* client, union mqtt_packet *pkt) {
 
 
         struct client *new_client = sol_malloc(sizeof(*new_client));
-
-        printf("here");
         const char *cid = (const char *) pkt->connect.payload.client_id;
-        new_client->client_id = sol_strdup(cid);
-        new_client->stream = client;
+        stream->data = (char *) strdup(cid);
+        new_client->client_id = (char*) stream->data;
+        new_client->stream = stream;
+
 
         // printf("created new client\n");
         ht_put_client(&mqttuv.clients, new_client);
+
+        struct client* test = ht_find_client(mqttuv.clients, stream->data);
+
+
         // printf("added to hastable\n");
         if (pkt->connect.bits.clean_session == false){
             // new_client->session.subscriptions = list_create(NULL);
@@ -146,7 +113,7 @@ static int connect_handler(uv_stream_t* client, union mqtt_packet *pkt) {
     
         unsigned char *p = pack_mqtt_packet(response, CONNACK);
 
-        write2(client, p, MQTT_ACK_LEN);
+        write2(stream, p, MQTT_ACK_LEN);
         
         info.nclients++;
         info.nconnections++;
@@ -168,21 +135,43 @@ static int connect_handler(uv_stream_t* client, union mqtt_packet *pkt) {
         return 1;
  }
 
-static int subscribe_handler(uv_stream_t* client, union mqtt_packet *pkt){
+static int subscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
     // TODO add QOS logic 
-    // send back success and failure messages etc
-    printf("%s", pkt->connect.payload.client_id);
-    struct client *client_info = ht_find_client(mqttuv.clients,(const char *) pkt->connect.payload.client_id);
+    // send back success and failure messages et
+    const char *client_id = (const char *)stream->data;
+  
+    struct client *client_info = ht_find_client(mqttuv.clients, client_id);
 
-    if (!client_info){
-        int qos = pkt->publish.header.bits.qos;
-        insert_subscription(mqttuv.topics, (char *) pkt->publish.topic, client_info, qos);
+    if (client_info){
+        printf("subscibe tuples length %d\n", pkt->subscribe.tuples_len);
+        unsigned char rcs[pkt->subscribe.tuples_len];
+        printf("got the client from the hashmap\n");
+        for (unsigned i = 0; i < pkt->subscribe.tuples_len; i++) {
+    
+            int qos = pkt->publish.header.bits.qos;
+            printf("associated qos %d\n", qos);
+            char *topic = (char *) pkt->subscribe.tuples[i].topic;
+            printf("topic %s\n", topic);
+            insert_subscription(mqttuv.topics, (char *) topic, client_info, qos);
+        }
+
+        struct mqtt_suback *suback = mqtt_packet_suback(SUBACK_BYTE,
+            pkt->subscribe.pkt_id,
+            rcs,
+            pkt->subscribe.tuples_len);
+
+        mqtt_packet_release(pkt, SUBSCRIBE);
+        pkt->suback = *suback;
+        unsigned char *packed = pack_mqtt_packet(pkt, SUBACK);
+        size_t len = MQTT_HEADER_LEN + sizeof(uint16_t) + pkt->subscribe.tuples_len;
+        
+        write2(stream, packed, len);
     }else{
         printf("hashmap failed\n");
     }
 }
 
-static int unsubscribe_handler(uv_stream_t* client, union mqtt_packet *pkt){
+static int unsubscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
     struct client *client_info = ht_find_client(mqttuv.clients,(const char *) pkt->connect.payload.client_id);
     if (!client_info){
         int qos = pkt->publish.header.bits.qos;
@@ -252,6 +241,7 @@ static void on_write(uv_write_t* req,  int status){
 
     if (uv_accept(server, (uv_stream_t *)client) == 0) {
         printf("accepted someone!! yipee\n");
+
         uv_read_start((uv_stream_t *)client, alloc_buffer, on_read);  
     } else {
         uv_close((uv_handle_t *)client, NULL);
@@ -259,47 +249,51 @@ static void on_write(uv_write_t* req,  int status){
  }
 
 
-static void on_read(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf){
+static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
     // parse the buffer
     // parse head send to 
     if (nread < 0) {
-        uv_close((uv_handle_t*) client, NULL);
-        //free(buf->base);
+        uv_close((uv_handle_t*) stream, NULL);
+        //free(buf->base); // usually free outside after parse
         return;
     }
 
-    char command;
-    ssize_t parsed = parse_packet((unsigned char *)buf->base, nread, &command);
+    printf("input_buf (%zd bytes): ", nread);  // use %zd for ssize_t
+    for (size_t i = 0; i < (size_t)nread; i++) {
+        printf("%02X ", (unsigned char) buf->base[i]);
+    }
+    printf("\n");
+    
 
     // error from the parsed function
-    if (parsed < 0){
-        uv_close((uv_handle_t*) client, NULL);
-        // free(buf->base);
-        return;
-    }
-    union mqtt_packet packet;
-    unpack_mqtt_packet((unsigned char *)buf->base, &packet);
-    union mqtt_header hdr = { .byte = command };
+    uint8_t command = (uint8_t) buf->base[0];
+    uint8_t packet_type = command >> 4;
 
+    printf("packet type %d\n", packet_type );
+
+    union mqtt_packet packet;
+    printf("%d\n", unpack_mqtt_packet((unsigned char *)buf->base, &packet));
     
-    switch((unsigned int) command >> 4){
-        case(MQTT_CONNECT):
-            // pass in the client stream, and the packet to the specfic handler
-            connect_handler(client, &packet);
+    union mqtt_header hdr = { .byte = command };
+    switch(packet_type){
+        case CONNECT:
+            connect_handler( stream, &packet);
             break;
-        case(MQTT_SUBSCRIBE):
-            printf("somehow command subscribe");
-            subscribe_handler(client, &packet);
+        case SUBSCRIBE:
+            subscribe_handler( stream, &packet);
             break;
-        case(MQTT_PUBLISH):
-            publish_handler(client, &packet);
+        case PUBLISH:
+            publish_handler(stream, &packet);
             break;
     }
+
+
 
     //free(buf->base);
  }
 
 struct topic *get_or_create_child(struct topic *parent, const char *level) {
+    
     struct topic *cur = parent->children;
 
     while (cur) {
@@ -443,11 +437,15 @@ void unsubscribe(struct topic *root, const char *topic, struct client *client) {
 
     free(dup);
 }
+
+
+
+
 int start_server(const char *addr, const char *port) {
  
     /* Initialize global Sol instance */
     mqttuv.clients = NULL;
-    mqttuv.topics = NULL;
+    mqttuv.topics = calloc(1, sizeof(struct topic));;
     uv_loop_t *loop = uv_default_loop();
     uv_tcp_t *server = malloc(sizeof(uv_tcp_t));
 

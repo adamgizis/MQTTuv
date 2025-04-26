@@ -285,6 +285,7 @@ static size_t unpack_mqtt_subscribe(const unsigned char *raw,
 
     struct mqtt_subscribe subscribe = { .header = *hdr };
 
+    printf("unpacking subscribe correctly");
     /*
      * Second byte of the fixed header, contains the length of remaining bytes
      * of the connect packet
