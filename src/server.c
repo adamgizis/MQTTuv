@@ -76,7 +76,6 @@ static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
         }
 
         // create a new client and add to the hashtable
-        printf("in connect \n");
 
 
         struct client *new_client = sol_malloc(sizeof(*new_client));
@@ -96,8 +95,6 @@ static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
         if (pkt->connect.bits.clean_session == false){
             // new_client->session.subscriptions = list_create(NULL);
         }
-
-        printf("connecting\n");
         /* Record the new client connected */
 
         // send back a connack messgae 
@@ -127,7 +124,7 @@ static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
         // TODO improper string (starts with $ or ends with # return failure)
         (void) client;
         char *top = (char *) pkt->publish.topic;
-        printf("%s", pkt->publish.payload);
+        printf("sending message %s\n", pkt->publish.payload);
 
 
         publish(mqttuv.topics, top, pkt, 0 );
@@ -149,7 +146,8 @@ static int subscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
         unsigned char rcs[pkt->subscribe.tuples_len];
         printf("got the client from the hashmap\n");
         for (unsigned i = 0; i < pkt->subscribe.tuples_len; i++) {
-            int qos = pkt->subscribe.header.bits.qos;
+            // this not the correct qos
+            int qos = pkt->subscribe.tuples[i].qos;
             printf("associated qos %d\n", qos);
             char *topic = (char *) pkt->subscribe.tuples[i].topic;
             printf("topic %s\n", topic);
@@ -193,25 +191,26 @@ void write2subs(struct subscriber *subs, union mqtt_packet *pkt) {
 }
 #else
 static void write2subs(struct subscriber* head, union mqtt_packet *pkt){
-
-    printf("Received PUBLISH (d%i, q%u, r%i, m%u, %s, ... (%i bytes))",pkt->publish.header.bits.dup, pkt->publish.header.bits.qos, pkt->publish.header.bits.retain,pkt->publish.pkt_id, pkt->publish.topic, pkt->publish.payloadlen);
-
-
     if(pkt == NULL){
         printf("correctly writing to subs in test\n");
         return;
     }
     size_t publen;
-    char* p;
     struct subscriber* tmp = head;
     while(tmp != NULL){
 
         printf("sending to %s\n", tmp->client->client_id);
         publen = MQTT_HEADER_LEN + sizeof(uint16_t) + pkt->publish.topiclen + pkt->publish.payloadlen;
         pkt->publish.header.bits.qos = tmp->qos;
-        p = pack_mqtt_packet(pkt, PUBLISH);
-        write2(tmp->client->stream, p, publen);
-        free(p);
+        unsigned char * packed = pack_mqtt_packet(pkt, PUBLISH);
+
+        for (size_t i = 0; i < (size_t)publen; i++) {
+            printf("%02X ", (unsigned char) packed[i]);
+        }
+        printf("\n");
+        
+        write2(tmp->client->stream, packed, publen);
+
         tmp = tmp->next;
     }
     
@@ -219,6 +218,7 @@ static void write2subs(struct subscriber* head, union mqtt_packet *pkt){
 #endif
 
  static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf){
+    
     buf->base = sol_malloc(conf->max_request_size);
     buf->len = suggested_size;
  }
