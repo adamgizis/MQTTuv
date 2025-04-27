@@ -2,7 +2,7 @@ import paho.mqtt.client as mqtt
 
 BROKER = "localhost"
 PORT = 7000
-TOPIC = "a/#"
+TOPIC = "a/b"
 
 def on_connect(client, userdata, flags, rc):
     print("Connected to broker with return code:", rc)
@@ -16,11 +16,15 @@ def on_subscribe(client, userdata, mid, granted_qos):
 
 def on_message(client, userdata, msg):
     print(f"Received message on topic {msg.topic}: {msg.payload.decode()}")
+    client.unsubscribe(TOPIC)
 
-client = mqtt.Client(client_id="hello2")
+def on_unsubscribe(client, userdate, mid):
+    print(f"Unsubscribed {mid}")
+client = mqtt.Client(client_id="unsub")
 client.on_connect = on_connect
 client.on_subscribe = on_subscribe
 client.on_message = on_message
+client.on_unsubscribe = on_unsubscribe
 
 client.connect(BROKER, PORT)
 client.loop_forever()

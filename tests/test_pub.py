@@ -16,6 +16,9 @@ message = "Hello"
 time.sleep(3)
 client.publish(topic, message)
 
+time.sleep(3)
+client.publish("a/d", "howdy")
+
 print(f"Published '{message}' to topic '{topic}'")
 
 client.loop_forever()

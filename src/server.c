@@ -66,6 +66,7 @@ static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
 
         sol_info("Received double CONNECT from %s, disconnecting client",
         pkt->connect.payload.client_id);
+        // TODO safe disconect.
         ht_delete_client(&mqttuv.clients, (const char *) pkt->connect.payload.client_id);
 
         // Update stats
@@ -140,45 +141,49 @@ static int subscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
     const char *client_id = (const char *)stream->data;
   
     struct client *client_info = ht_find_client(mqttuv.clients, client_id);
-
-    if (client_info){
-        printf("subscibe tuples length %d\n", pkt->subscribe.tuples_len);
-        unsigned char rcs[pkt->subscribe.tuples_len];
-        printf("got the client from the hashmap\n");
-        for (unsigned i = 0; i < pkt->subscribe.tuples_len; i++) {
-            // this not the correct qos
-            int qos = pkt->subscribe.tuples[i].qos;
-            printf("associated qos %d\n", qos);
-            char *topic = (char *) pkt->subscribe.tuples[i].topic;
-            printf("topic %s\n", topic);
-            rcs[i] = qos;
-            insert_subscription(mqttuv.topics, (char *) topic, client_info, qos);
-        }
-
-        struct mqtt_suback *suback = mqtt_packet_suback(SUBACK_BYTE,
-            pkt->subscribe.pkt_id,
-            rcs,
-            pkt->subscribe.tuples_len);
-
-        mqtt_packet_release(pkt, SUBSCRIBE);
-        pkt->suback = *suback;
-        unsigned char *packed = pack_mqtt_packet(pkt, SUBACK);
-        size_t len = MQTT_HEADER_LEN + sizeof(uint16_t) + pkt->subscribe.tuples_len;
-        
-        write2(stream, packed, len);
-    }else{
-        printf("hashmap failed\n");
+    if(!client_info){
+        printf("hashmap failed");
+        return -1;
     }
+    printf("subscibe tuples length %d\n", pkt->subscribe.tuples_len);
+    unsigned char rcs[pkt->subscribe.tuples_len];
+    printf("got the client from the hashmap\n");
+    for (unsigned i = 0; i < pkt->subscribe.tuples_len; i++) {
+        // this not the correct qos
+        int qos = pkt->subscribe.tuples[i].qos;
+        printf("associated qos %d\n", qos);
+        char *topic = (char *) pkt->subscribe.tuples[i].topic;
+        printf("topic %s\n", topic);
+        rcs[i] = qos;
+        insert_subscription(mqttuv.topics, (char *) topic, client_info, qos);
+    }
+
+    struct mqtt_suback *suback = mqtt_packet_suback(SUBACK_BYTE,
+        pkt->subscribe.pkt_id,
+        rcs,
+        pkt->subscribe.tuples_len);
+
+    mqtt_packet_release(pkt, SUBSCRIBE);
+    pkt->suback = *suback;
+    unsigned char *packed = pack_mqtt_packet(pkt, SUBACK);
+    size_t len = MQTT_HEADER_LEN + sizeof(uint16_t) + pkt->subscribe.tuples_len;
+    
+    write2(stream, packed, len);
 }
 
 static int unsubscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
     struct client *client_info = ht_find_client(mqttuv.clients,(const char *) pkt->connect.payload.client_id);
-    if (!client_info){
-        int qos = pkt->publish.header.bits.qos;
-        unsubscribe(mqttuv.topics, (const char *) pkt->publish.topic, client_info);
-    }else{
-        printf("hashmap failed\n");
+    if(!client_info){
+        printf("error not in hashmap\n");
     }
+    for (unsigned i = 0; i < pkt->subscribe.tuples_len; i++) {
+        unsubscribe(mqttuv.topics, (const char *) pkt->unsubscribe.tuples[i].topic, client_info);
+    }
+
+    // return unsuback
+    pkt->ack = *mqtt_packet_ack(UNSUBACK_BYTE, pkt->unsubscribe.pkt_id);
+    unsigned char *packed = pack_mqtt_packet(pkt, UNSUBACK);
+    write2(stream, packed, MQTT_ACK_LEN);
 }
 #ifdef TESTING
 void write2subs(struct subscriber *subs, union mqtt_packet *pkt) {
