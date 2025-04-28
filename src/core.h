@@ -26,7 +26,8 @@ struct client {
     int keepalive; // number of seconds (i am already multiplying this by )
     // struct session session;
     uv_stream_t* stream;
-    struct sub_topic* subs; 
+    struct sub_topic* subs;
+    int handshake_done; 
     UT_hash_handle hh; /* makes this structure hashable */
 };
 

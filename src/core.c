@@ -9,6 +9,7 @@ void ht_put_client(struct client **glob, struct client *new_client) {
 
 struct client *ht_find_client(struct client *glob, const char *id) {
     struct client *s;
+    printf("HASH_FIND_STR\n");
     HASH_FIND_STR(glob, id, s);
     return s;
 }
