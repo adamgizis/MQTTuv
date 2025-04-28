@@ -15,7 +15,7 @@ When a client connects to an MQTT broker is provides a keepalive time interval, 
 Tests were written in C to verify the trie for storing the topic subscriptions is still working (isolated from publishing messages). Other tests were written using paho-mqtt[https://pypi.org/project/paho-mqtt/] client python library. 
 
 ## Attributions
-Packet parsing was done using functionality from the project SOL[https://github.com/codepr/sol/tree/tutorial]. Information about MQTT packet usage was taken from HiveMQ[https://www.hivemq.com/]. HashMap implementation was done using Uthash[https://troydhanson.github.io/uthash/]. 
+Packet parsing was done using functionality from the project [SOL](https://github.com/codepr/sol/tree/tutorial). Information about MQTT packet usage was taken from [HiveMQ](https://www.hivemq.com/). HashMap implementation was done using [Uthash](https://troydhanson.github.io/uthash/). 
 
 ## Building
 Build and run using cmake. Python tests clients are provided in /tests. 
