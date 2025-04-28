@@ -1,1 +1,0 @@
-/usr/bin/cc CMakeFiles/mqttuv.dir/src/sol.c.o CMakeFiles/mqttuv.dir/src/config.c.o CMakeFiles/mqttuv.dir/src/core.c.o CMakeFiles/mqttuv.dir/src/mqtt.c.o CMakeFiles/mqttuv.dir/src/pack.c.o CMakeFiles/mqttuv.dir/src/server.c.o CMakeFiles/mqttuv.dir/src/util.c.o -o mqttuv  -luv -lpthread -ldl -lrt -luuid 
