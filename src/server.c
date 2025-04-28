@@ -340,10 +340,13 @@ static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
     
     union mqtt_header hdr = { .byte = command };
 
-    // struct client * cli = ht_find_client(mqttuv.clients,(const char *) packet.connect.payload.client_id);
-    // if (cli){
-    //     reset_timer(cli->timer);
-    // }
+    struct client * cli;
+    if(packet_type != CONNECT){
+        cli = ht_find_client(mqttuv.clients,(const char *) stream->data);
+    }
+    if (cli){
+        reset_timer(cli->timer);
+    }
 
 
     switch(packet_type){
