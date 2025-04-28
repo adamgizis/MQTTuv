@@ -32,6 +32,7 @@
 #include "mqtt.h"
 
 
+
 typedef size_t mqtt_unpack_handler(const unsigned char *,
                                    union mqtt_header *,
                                    union mqtt_packet *);
@@ -199,6 +200,9 @@ static size_t unpack_mqtt_connect(const unsigned char *raw,
         pkt->connect.payload.client_id = sol_malloc(cid_len + 1);
         unpack_bytes((const uint8_t **) &raw, cid_len,
                      pkt->connect.payload.client_id);
+    }else{
+        printf("No client id set");
+        //TODO generate random internal number
     }
 
     /* Read the will topic and message if will is set on flags */

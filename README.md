@@ -20,14 +20,6 @@ Packet parsing was done using functionality from the project [SOL](https://githu
 ## Building
 Build and run using cmake. Python tests clients are provided in /tests. 
 
-```
-mkdir build
-cd build
-cmake ..
-make 
-./mqttuv -c ../sol/sol.conf
-```
-
 ## Design
 The design is heavily reliant on callback functions (it's libuv so obviously). Clients are accepts to the tcp server and sent to callback function on_accept. on_accept initalizes a stream for reading from the client. 
 ```
@@ -57,9 +49,5 @@ On_read() is then called when a packet is recieved. The packet is parsed and the
 ```
 In the connect handler, a client struct is created and added to a hashtable to store additional information. 
 Topic subscribtions are added to a trie that breaks up a passed in string into levels. When a topic is published to, it walks through the trie and publishes, using recursion when a '#' or '+' is seen. 
-
-
-
-
 
 

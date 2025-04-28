@@ -1,1 +1,0 @@
-/usr/bin/cc CMakeFiles/mqttuv.dir/main.c.o -o mqttuv  -Wl,-rpath,/local/MQTTuv/build/mqtt/paho.mqtt.embedded-c/MQTTPacket/src -luv -lpthread -ldl -lrt mqtt/paho.mqtt.embedded-c/MQTTPacket/src/libpaho-embed-mqtt3c.so 
