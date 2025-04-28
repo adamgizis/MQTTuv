@@ -9,7 +9,7 @@ A client can subscribe to a topic (a string using '/' to break it up into levels
 For example subscribing to 'a/#' would recieve all messages published to 'a/b', 'a/b/c', 'a/d', and subscribing to 'a/+/b' would get messages from 'a/b/b' and 'a/c/b'. A client can publish to any established topic. 
 
 ### Keepalive 
-When a client connects to an MQTT broker is provides a keepalive time interval, if the client does not provide a message within 1.5x the interval provided, it is disconnected. A client can send PINGREQ packets to verify that the connection is still alive. This is implemented using uv_timer_t
+When a client connects to an MQTT broker is provides a keepalive time interval, if the client does not provide a message within 1.5x the interval provided, it is disconnected. A client can send PINGREQ packets to verify that the connection is still alive. This is implemented using uv_timer_t.
 
 ## Testing
 Tests were written in C to verify the trie for storing the topic subscriptions is still working (isolated from publishing messages). Other tests were written using [paho-mqtt](https://pypi.org/project/paho-mqtt/) client python library. 
