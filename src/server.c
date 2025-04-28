@@ -158,12 +158,7 @@ static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
         uv_close((uv_handle_t *)client_info->timer, on_uv_handle_closed);
     }
 
-
-    printf("unsubscribing from all\n");
     unsubscribe_all(mqttuv.topics, client_info);
-    printf("deleting client\n");
-    printf("client to delete: %p\n", client_info);
-    printf("stopping stream\n");
     uv_read_stop(stream);                      
     uv_close((uv_handle_t *)stream, on_uv_handle_closed);
     ht_delete_client(&mqttuv.clients, client_id);
