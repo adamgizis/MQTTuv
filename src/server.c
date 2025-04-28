@@ -118,7 +118,8 @@
         new_client->timer->data = new_client->client_id;
         uv_timer_init(stream->loop, new_client->timer);
         printf("starting timer");
-        uv_timer_start(new_client->timer, on_keepalive_timeout, to_interval_ms(new_client->keepalive), 0);
+        int kas = to_interval_ms(new_client->keepalive);
+        uv_timer_start(new_client->timer, on_keepalive_timeout, kas, kas);
 
 
         // printf("created new client\n");
@@ -179,6 +180,7 @@
     static int disconnect_client(struct client *client) {
         if (!client) return -1;
 
+
         if (client->timer && !uv_is_closing((uv_handle_t*)client->timer)) {
             uv_timer_stop(client->timer);
             uv_close((uv_handle_t*)client->timer, on_uv_handle_closed);
@@ -210,12 +212,20 @@
 }
 
  static void on_keepalive_timeout(uv_timer_t* handle){
-    printf("WE TIMED OUT DISCONNECT\n");
+    struct client* cli = NULL;
+    cli = ht_find_client(mqttuv.clients, (const char *) handle->data);
+    // uv_timer_stop(handle);
+    if(cli){
+        disconnect_handler(cli->stream, NULL);
+    }
+
  }
 
  static void reset_timer(uv_timer_t* keepalive_timer) {
     printf("reset\n");
+    printf("due in before %ld\n", uv_timer_get_due_in(keepalive_timer));
     uv_timer_again(keepalive_timer);
+    printf("due in after %ld\n", uv_timer_get_due_in(keepalive_timer));
 }
 
 
