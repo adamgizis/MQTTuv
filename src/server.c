@@ -24,7 +24,7 @@
  static struct info mqttuv;
 
  // global event loop
- struct uv_loop_t* loop;
+ uv_loop_t* loop;
  
  /* Prototype for a command handler */
  typedef int handler(uv_stream_t* , union mqtt_packet *);
@@ -52,7 +52,17 @@
  static int publish_handler(uv_stream_t* , union mqtt_packet *);
  static int pingreq_handler(uv_stream_t*, union mqtt_packet *);
  
+ // keep alive
+ static void on_keepalive_timeout(uv_timer_t*);
+ static int to_interval_ms(int);
+ static void reset_timer(uv_timer_t*);
+ 
+ 
 
+ static int to_interval_ms(int seconds){
+    // if 1.5 times the keep alive disconnect the guy
+    return seconds * 1000 * 1.5;
+ }
 
 static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
 
@@ -84,6 +94,15 @@ static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
         stream->data = (char *) strdup(cid);
         new_client->client_id = (char*) stream->data;
         new_client->stream = stream;
+
+        //set up the keep alive timer
+        new_client->keepalive = pkt->connect.payload.keepalive;
+        uv_timer_t* keepalive_timer =malloc(sizeof(uv_timer_t));
+        new_client->timer = keepalive_timer;
+        new_client->timer->data = new_client->client_id;
+        uv_timer_init(stream->loop, new_client->timer);
+        printf("starting timer");
+        uv_timer_start(new_client->timer, on_keepalive_timeout, to_interval_ms(new_client->keepalive), 0);
 
 
         // printf("created new client\n");
@@ -119,6 +138,17 @@ static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
         return 1;
      
  }
+
+
+ static void on_keepalive_timeout(uv_timer_t* handle){
+    printf("WE TIMED OUT DISCONNECT\n");
+ }
+
+ static void reset_timer(uv_timer_t* keepalive_timer) {
+    printf("reset\n");
+    uv_timer_again(keepalive_timer);
+}
+
 
  static int publish_handler(uv_stream_t* client, union mqtt_packet *pkt){
         // // TODO ADD QOS logic
@@ -307,9 +337,15 @@ static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
     printf("packet type %d\n", packet_type );
 
     union mqtt_packet packet;
-    printf("%d\n", unpack_mqtt_packet((unsigned char *)buf->base, &packet));
     
     union mqtt_header hdr = { .byte = command };
+
+    // struct client * cli = ht_find_client(mqttuv.clients,(const char *) packet.connect.payload.client_id);
+    // if (cli){
+    //     reset_timer(cli->timer);
+    // }
+
+
     switch(packet_type){
         case CONNECT:
             connect_handler( stream, &packet);
@@ -325,6 +361,7 @@ static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
             printf("unsubscribe!\n");
             unsubscribe_handler(stream, &packet);
         case PINGREQ:
+            printf("pingreq!\n");
             pingreq_handler(stream, &packet);
     }
 
