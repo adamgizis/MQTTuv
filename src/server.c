@@ -12,6 +12,7 @@
  #include <uv.h> 
  #include <stdlib.h>
  #include "uthash.h"
+ #include "utlist.h"
  #include <assert.h>
  #include "trie.h"
  /*
@@ -56,6 +57,9 @@
  static void on_keepalive_timeout(uv_timer_t*);
  static int to_interval_ms(int);
  static void reset_timer(uv_timer_t*);
+
+ static void on_uv_handle_closed(uv_handle_t *handle);
+ void unsubscribe_all(struct topic *root, struct client *client);
  
  
 
@@ -94,6 +98,7 @@ static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
         stream->data = (char *) strdup(cid);
         new_client->client_id = (char*) stream->data;
         new_client->stream = stream;
+        new_client->subs = NULL;
 
         //set up the keep alive timer
         new_client->keepalive = pkt->connect.payload.keepalive;
@@ -139,6 +144,44 @@ static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
      
  }
 
+ static int disconnect_handler(uv_stream_t *stream, union mqtt_packet *pkt) {
+    const char *client_id = (const char *)stream->data;
+  
+    struct client *client_info = ht_find_client(mqttuv.clients, client_id);
+    if(!client_info){
+        printf("hashmap failed\n");
+        return -1;
+    }
+
+    if(client_info->timer){
+        uv_timer_stop(client_info->timer);
+        uv_close((uv_handle_t *)client_info->timer, on_uv_handle_closed);
+    }
+
+
+    printf("unsubscribing from all\n");
+    unsubscribe_all(mqttuv.topics, client_info);
+    printf("deleting client\n");
+    printf("client to delete: %p\n", client_info);
+    printf("stopping stream\n");
+    uv_read_stop(stream);                      
+    uv_close((uv_handle_t *)stream, on_uv_handle_closed);
+    ht_delete_client(&mqttuv.clients, client_id);
+
+    info.nclients--;
+    info.nconnections--;
+
+    sol_free(client_info);
+
+    sol_debug("Client %s disconnected gracefully", client_id);
+    return 0;
+
+ }
+
+ static void on_uv_handle_closed(uv_handle_t *handle)
+{   
+    printf("uv handle closed: %p\n", handle);
+}
 
  static void on_keepalive_timeout(uv_timer_t* handle){
     printf("WE TIMED OUT DISCONNECT\n");
@@ -186,6 +229,10 @@ static int subscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
         printf("topic %s\n", topic);
         rcs[i] = qos;
         insert_subscription(mqttuv.topics, (char *) topic, client_info, qos);
+
+        struct sub_topic *node = calloc(1, sizeof(*node));
+        node->topic = strdup(topic);
+        LL_PREPEND(client_info->subs, node);
     }
 
     struct mqtt_suback *suback = mqtt_packet_suback(SUBACK_BYTE,
@@ -210,6 +257,16 @@ static int unsubscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
     for (unsigned i = 0; i < pkt->subscribe.tuples_len; i++) {
         printf("unsubscribing in tuple loop\n");
         unsubscribe(mqttuv.topics, (const char *) pkt->unsubscribe.tuples[i].topic, client_info);
+
+        struct sub_topic *node, *tmp;
+        LL_FOREACH_SAFE(client_info->subs, node, tmp) {
+            if(strcmp(node->topic, pkt->unsubscribe.tuples[i].topic) == 0) {
+                LL_DELETE(client_info->subs, node);
+                free(node->topic);
+                free(node);
+                break;
+            }
+        }
     }
 
     // return unsuback
@@ -360,9 +417,15 @@ static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
         case UNSUBSCRIBE:
             printf("unsubscribe!\n");
             unsubscribe_handler(stream, &packet);
+            break;
         case PINGREQ:
             printf("pingreq!\n");
             pingreq_handler(stream, &packet);
+            break;
+        case DISCONNECT:
+            printf("disconnect!\n");
+            disconnect_handler(stream, &packet);
+            break;
     }
 
     //free(buf->base);
@@ -514,7 +577,18 @@ void unsubscribe(struct topic *root, const char *topic, struct client *client) {
     free(dup);
 }
 
+void unsubscribe_all(struct topic *root, struct client *client)
+{
+    struct sub_topic *node, *tmp;
 
+    LL_FOREACH_SAFE(client->subs, node, tmp) {
+        printf("unsubscribing from %s", node->topic);
+        unsubscribe(root, node->topic, client);  
+        LL_DELETE(client->subs, node);           
+        free(node->topic);                     
+        free(node);                           
+    }
+}
 
 
 int start_server(const char *addr, const char *port) {

@@ -18,7 +18,8 @@ void ht_delete_client(struct client **glob, const char *id) {
     HASH_FIND_STR(*glob, id, client);
     if (client) {
         HASH_DEL(*glob, client);
-        free(client);  // Ensure all internal data is heap-allocated
+        printf("freeing client: %p\n", client);
+        //free(client);  // Ensure all internal data is heap-allocated
     }
 }
 
