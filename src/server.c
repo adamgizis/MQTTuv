@@ -48,6 +48,7 @@
  
  /* Command handler, each one have responsibility over a defined command packet */
  static int connect_handler(uv_stream_t* , union mqtt_packet *);
+ static int disconnect_handler(uv_stream_t* , union mqtt_packet *);
  static int subscribe_handler(uv_stream_t* , union mqtt_packet *);
  static int publish_handler(uv_stream_t* , union mqtt_packet *);
 
@@ -118,6 +119,10 @@ static int connect_handler(uv_stream_t* stream, union mqtt_packet *pkt) {
 
         return 1;
      
+ }
+
+ static int disconnect_handler(uv_stream_t* client, union mqtt_packet *pkt){
+        
  }
 
  static int publish_handler(uv_stream_t* client, union mqtt_packet *pkt){
@@ -306,6 +311,8 @@ static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
             printf("publish!\n");
             publish_handler(stream, &packet);
             break;
+        case DISCONNECT:
+            disconnect_handler(stream, &packet);
     }
 
     //free(buf->base);
@@ -363,7 +370,6 @@ void insert_subscription(struct topic *root, const char *topic, struct client *c
 
     free(dup);
 }
-
 
 void publish_recursive(struct topic *node, char **levels, int depth, int max_depth, union mqtt_packet *pkt, int test) {
     if (!node) return;
@@ -456,8 +462,6 @@ void unsubscribe(struct topic *root, const char *topic, struct client *client) {
 
     free(dup);
 }
-
-
 
 
 int start_server(const char *addr, const char *port) {

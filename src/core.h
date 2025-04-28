@@ -23,6 +23,7 @@ struct client {
     char *client_id;
     // struct session session;
     uv_stream_t* stream;
+    struct list* subs; 
     UT_hash_handle hh; /* makes this structure hashable */
 };
 

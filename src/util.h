@@ -65,11 +65,11 @@ char *append_string(char *, char *, size_t);
 size_t memory_used(void);
 
 
-#define log(...) sol_log( __VA_ARGS__ )
-#define sol_debug(...) log(DEBUG, __VA_ARGS__)
-#define sol_warning(...) log(WARNING, __VA_ARGS__)
-#define sol_error(...) log(ERROR, __VA_ARGS__)
-#define sol_info(...) log(INFORMATION, __VA_ARGS__)
+#define sol_logf(...) sol_log( __VA_ARGS__ )
+#define sol_debug(...) sol_logf(DEBUG, __VA_ARGS__)
+#define sol_warning(...) sol_logf(WARNING, __VA_ARGS__)
+#define sol_error(...) sol_logf(ERROR, __VA_ARGS__)
+#define sol_info(...) sol_logf(INFORMATION, __VA_ARGS__)
 
 
 #define STREQ(s1, s2, len) strncasecmp(s1, s2, len) == 0 ? true : false
