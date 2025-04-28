@@ -21,6 +21,8 @@ struct info{
 
 struct client {
     char *client_id;
+    uv_timer_t timer;
+    int keepalive; // number of seconds (i am already multiplying this by )
     // struct session session;
     uv_stream_t* stream;
     UT_hash_handle hh; /* makes this structure hashable */

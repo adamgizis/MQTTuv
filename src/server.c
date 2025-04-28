@@ -50,7 +50,7 @@
  static int connect_handler(uv_stream_t* , union mqtt_packet *);
  static int subscribe_handler(uv_stream_t* , union mqtt_packet *);
  static int publish_handler(uv_stream_t* , union mqtt_packet *);
-
+ static int pingreq_handler(uv_stream_t*, union mqtt_packet *);
  
 
 
@@ -142,7 +142,7 @@ static int subscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
   
     struct client *client_info = ht_find_client(mqttuv.clients, client_id);
     if(!client_info){
-        printf("hashmap failed");
+        printf("hashmap failed\n");
         return -1;
     }
     printf("subscibe tuples length %d\n", pkt->subscribe.tuples_len);
@@ -169,6 +169,7 @@ static int subscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
     size_t len = MQTT_HEADER_LEN + sizeof(uint16_t) + pkt->subscribe.tuples_len;
     
     write2(stream, packed, len);
+    return 1;
 }
 
 static int unsubscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
@@ -177,6 +178,7 @@ static int unsubscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
         printf("error not in hashmap\n");
     }
     for (unsigned i = 0; i < pkt->subscribe.tuples_len; i++) {
+        printf("unsubscribing in tuple loop\n");
         unsubscribe(mqttuv.topics, (const char *) pkt->unsubscribe.tuples[i].topic, client_info);
     }
 
@@ -184,7 +186,17 @@ static int unsubscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
     pkt->ack = *mqtt_packet_ack(UNSUBACK_BYTE, pkt->unsubscribe.pkt_id);
     unsigned char *packed = pack_mqtt_packet(pkt, UNSUBACK);
     write2(stream, packed, MQTT_ACK_LEN);
+    return 1;
 }
+
+static int pingreq_handler(uv_stream_t* stream, union mqtt_packet *pkt){
+    // respond with ping response
+    pkt->header = *mqtt_packet_header(PINGRESP_BYTE);
+    unsigned char *packed = pack_mqtt_packet(pkt, PINGRESP);
+    write2(stream, packed, MQTT_HEADER_LEN);
+    return 1;
+}
+
 #ifdef TESTING
 void write2subs(struct subscriber *subs, union mqtt_packet *pkt) {
     
@@ -265,8 +277,11 @@ static void on_write(uv_write_t* req,  int status){
  }
 
 
+
+
 static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
 
+    // AT THIS POINT THE PACKET MAY NOT BE IN THE HASHMAP
     // TODO - ACCEPT multiple packets in one stream
 
 
@@ -306,6 +321,11 @@ static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
             printf("publish!\n");
             publish_handler(stream, &packet);
             break;
+        case UNSUBSCRIBE:
+            printf("unsubscribe!\n");
+            unsubscribe_handler(stream, &packet);
+        case PINGREQ:
+            pingreq_handler(stream, &packet);
     }
 
     //free(buf->base);

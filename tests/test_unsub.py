@@ -1,4 +1,5 @@
 import paho.mqtt.client as mqtt
+import time
 
 BROKER = "localhost"
 PORT = 7000
@@ -16,6 +17,7 @@ def on_subscribe(client, userdata, mid, granted_qos):
 
 def on_message(client, userdata, msg):
     print(f"Received message on topic {msg.topic}: {msg.payload.decode()}")
+    time.sleep(3)
     client.unsubscribe(TOPIC)
 
 def on_unsubscribe(client, userdate, mid):
