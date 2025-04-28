@@ -28,3 +28,38 @@ make
 ./mqttuv -c ../sol/sol.conf
 ```
 
+## Design
+The design is heavily reliant on callback functions (it's libuv so obviously). Clients are accepts to the tcp server and sent to callback function on_accept. on_accept initalizes a stream for reading from the client. 
+```
+  if (uv_accept(server, (uv_stream_t *)client) == 0) {
+        printf("accepted someone!! yipee\n");
+
+        uv_read_start((uv_stream_t *)client, alloc_buffer, on_read);  
+    } else {
+        uv_close((uv_handle_t *)client, NULL);
+    }
+```
+On_read() is then called when a packet is recieved. The packet is parsed and then based on the packet header is sent to the proper handler.
+```
+    switch(packet_type){
+        case CONNECT:
+            connect_handler( stream, &packet);
+            break;
+        case SUBSCRIBE:
+            subscribe_handler( stream, &packet);
+            break;
+        case PUBLISH:
+            printf("publish!\n");
+            publish_handler(stream, &packet);
+            break;
+...
+    }
+```
+In the connect handler, a client struct is created and added to a hashtable to store additional information. 
+Topic subscribtions are added to a trie that breaks up a passed in string into levels. When a topic is published to, it walks through the trie and publishes, using recursion when a '#' or '+' is seen. 
+
+
+
+
+
+
