@@ -286,16 +286,18 @@ static int subscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
 }
 
 static int unsubscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
-    struct client *client_info = ht_find_client(mqttuv.clients,(const char *) pkt->connect.payload.client_id);
+    struct client *client_info = ht_find_client(mqttuv.clients,(const char *) stream->data);
     if(!client_info){
         //printf("error not in hashmap\n");
     }
+
     for (unsigned i = 0; i < pkt->subscribe.tuples_len; i++) {
         //printf("unsubscribing in tuple loop\n");
         unsubscribe(mqttuv.topics, (const char *) pkt->unsubscribe.tuples[i].topic, client_info);
 
         struct sub_topic *node, *tmp;
         LL_FOREACH_SAFE(client_info->subs, node, tmp) {
+            printf("inhere\n");
             if(strcmp(node->topic, pkt->unsubscribe.tuples[i].topic) == 0) {
                 LL_DELETE(client_info->subs, node);
                 free(node->topic);
@@ -587,10 +589,10 @@ void publish(struct topic *root, const char *topic, union mqtt_packet *pkt, int 
 void unsubscribe(struct topic *root, const char *topic, struct client *client) {
     // TODO - if a topic has no subscribers get rid of it 
     char *dup = strdup(topic);
-    char *token = strtok(dup, "/");
 
     struct topic *node = root;
 
+    char *token = strtok(dup, "/");
     while (token) {
         struct topic *child = node->children;
         while (child && strcmp(child->level, token) != 0) {
@@ -598,7 +600,6 @@ void unsubscribe(struct topic *root, const char *topic, struct client *client) {
         }
         if (!child) {
             // case not found
-            free(dup);
             return;
         }
         node = child;
@@ -607,7 +608,8 @@ void unsubscribe(struct topic *root, const char *topic, struct client *client) {
             break;
 
         token = strtok(NULL, "/");
-    }
+    } 
+    
 
     // remove from susbscriber list
     struct subscriber **cur = &node->subscribers;

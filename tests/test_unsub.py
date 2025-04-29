@@ -1,32 +1,26 @@
-import paho.mqtt.client as mqtt
+from multiprocessing import Process
+from test_pub import test_publish_multi
+from test_sub_unsub import test_subscribe_unsubscribe
 import time
 
-BROKER = "localhost"
-PORT = 7000
-TOPIC = "a/b"
+def main():
+    topic = "test/topic"
 
-def on_connect(client, userdata, flags, rc):
-    print("Connected to broker with return code:", rc)
-    if rc == 0:
-        client.subscribe((TOPIC, 0))  
-    else:
-        print("Failed to connect")
+    subscriber = Process(target=test_subscribe_unsubscribe, args=(topic,))
+    subscriber.start()
 
-def on_subscribe(client, userdata, mid, granted_qos):
-    print("Successfully subscribed to topic:", TOPIC)
+    time.sleep(2)
 
-def on_message(client, userdata, msg):
-    print(f"Received message on topic {msg.topic}: {msg.payload.decode()}")
-    time.sleep(3)
-    client.unsubscribe(TOPIC)
+    publisher = Process(target=test_publish_multi, args=(topic,))
+    publisher.start()
 
-def on_unsubscribe(client, userdate, mid):
-    print(f"Unsubscribed {mid}")
-client = mqtt.Client(client_id="unsub")
-client.on_connect = on_connect
-client.on_subscribe = on_subscribe
-client.on_message = on_message
-client.on_unsubscribe = on_unsubscribe
 
-client.connect(BROKER, PORT)
-client.loop_forever()
+
+    publisher.join()
+    subscriber.join()
+    
+
+    print("Unsubscribe test completed.")
+
+if __name__ == "__main__":
+    main()
