@@ -14,7 +14,7 @@ client.on_connect = on_connect
 
 
 client.connect(BROKER, PORT, keepalive = 10)
-client.connect(BROKER, PORT, keepalive = 10)
+#client.connect(BROKER, PORT, keepalive = 10)
 client.loop_forever()
 
 
