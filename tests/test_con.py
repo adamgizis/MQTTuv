@@ -19,6 +19,7 @@ client.on_disconnect = on_disconnect
 
 
 client.connect(BROKER, PORT, keepalive = 10)
+
 client.loop_start()
 time.sleep(5)
 client.disconnect()
