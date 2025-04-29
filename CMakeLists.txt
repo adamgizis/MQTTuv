@@ -14,10 +14,10 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 
 file(GLOB SRC_FILES src/*.c)
 
-list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/src/sol.c)
+list(REMOVE_ITEM SRC_FILES ${CMAKE_SOURCE_DIR}/src/mqttuv.c)
 
 # Main executable 
-add_executable(mqttuv src/sol.c ${SRC_FILES})
+add_executable(mqttuv src/mqttuv.c ${SRC_FILES})
 target_link_libraries(mqttuv ${LIBUV_LIBRARIES} uuid)
 
 # Test executable (excludes sol.c)

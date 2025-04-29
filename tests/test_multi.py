@@ -1,5 +1,6 @@
 import paho.mqtt.client as mqtt
 import threading
+import time
 
 BROKER = "localhost"
 PORT = 7000
@@ -18,8 +19,8 @@ def run_client(name):
     client.loop_forever()
 
 
-threading.Thread(target=run_client, args=("client1",), daemon=True).start()
-threading.Thread(target=run_client, args=("client2",), daemon=True).start()
+threading.Thread(target=run_client, args=("client1_multi",), daemon=True).start()
+threading.Thread(target=run_client, args=("client2_multi",), daemon=True).start()
 
 try:
     while True:

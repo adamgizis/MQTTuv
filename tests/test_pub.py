@@ -1,24 +1,30 @@
 import paho.mqtt.client as mqtt
 import time
-
+import sys
 
 BROKER = "localhost"
 PORT = 7000
 
-client = mqtt.Client(client_id = "testpub")
 
+def test_publish(topic):
+    client = mqtt.Client(client_id="publisher")
+    client.connect(BROKER, PORT)
+    client.loop_start()
 
-client.connect(BROKER, PORT, 60)
+    client.publish(topic, payload=f"Message", qos=0)
 
-topic = "a/b"
-message = "Hello"
+    client.loop_stop()
+    client.disconnect()
 
-time.sleep(3)
-client.publish(topic, message)
+def test_publish_multi(topic):
+    client = mqtt.Client(client_id="publisher")
+    client.connect(BROKER, PORT)
+    client.loop_start()
 
-time.sleep(3)
-client.publish("a/d", "howdy")
+    for i in range(2):
+        client.publish(topic, payload=f"Message{i}", qos=0)
+        time.sleep(2)
+        
 
-print(f"Published '{message}' to topic '{topic}'")
-
-client.loop_forever()
+    client.loop_stop()
+    client.disconnect()

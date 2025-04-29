@@ -16,6 +16,7 @@
 #include "../src/trie.h"
 
 
+// test to make sure root of topic trie is never null and create a not root sets it to the correct level
 void test_get_or_create_child() {
     struct topic root = { .level = "", .children = NULL };
 
@@ -32,6 +33,8 @@ void test_get_or_create_child() {
     printf("test_get_or_create_child passed\n");
 }
 
+
+// test to verify that node is created and client is added as a subscriber
 void test_insert_subscription() {
     struct topic root = { .level = "", .children = NULL };
     struct client c1 = { .client_id = "client1" };
@@ -47,6 +50,7 @@ void test_insert_subscription() {
     printf("test_insert_subscription passed\n");
 }
 
+// Using the test version of write2subs publishes to a single 
 void test_publish_exact_and_wildcard() {
     struct topic root = { .level = "", .children = NULL };
     struct client c1 = { .client_id = "c1" };
