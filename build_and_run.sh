@@ -18,4 +18,4 @@ echo "➜ Compiling"
 make -j"$(nproc)"
 
 echo "➜ Running broker"
-./mqttuv -c ../sol/sol.conf
+./mqttuv -c ../sol/sol.conf 

@@ -80,7 +80,7 @@
             // Already connected client, 2 CONNECT packet should be interpreted as
             // a violation of the protocol, causing disconnection of the client
 
-            sol_info("client id: %s already exists, refusing connection", pkt->connect.payload.client_id);
+            sol_info("CLIENT_ID=%s already exists, refusing connection", pkt->connect.payload.client_id);
 
             union mqtt_packet *response = sol_malloc(sizeof(*response));
             unsigned char byte = CONNACK_BYTE;     /* header flags 0x20         */
@@ -94,7 +94,7 @@
         
             unsigned char *p = pack_mqtt_packet(response, CONNACK); /* 4 bytes   */
 
-            printf("writing failed connack\n");
+            //("writing failed connack\n");
             write2(stream, p, MQTT_ACK_LEN);
 
             uv_read_stop(stream);   
@@ -117,7 +117,7 @@
         new_client->timer = keepalive_timer;
         new_client->timer->data = new_client->client_id;
         uv_timer_init(stream->loop, new_client->timer);
-        printf("starting timer");
+        //printf("starting timer");
         int kas = to_interval_ms(new_client->keepalive);
         uv_timer_start(new_client->timer, on_keepalive_timeout, kas, kas);
 
@@ -160,18 +160,18 @@
         const char *client_id = (const char *)stream->data;
 
         if(!client_id) {
-            printf("null client id\n");
+            //printf("null client id\n");
             return -1;
         }
         
-        printf("finding client in hashmap\n");
+        //printf("finding client in hashmap\n");
         struct client *client_info = ht_find_client(mqttuv.clients, client_id);
-        printf("hello?\n");
+        //printf("hello?\n");
         if(!client_info){
-            printf("hashmap failed\n");
+            //printf("hashmap failed\n");
             return -1;
         }
-        printf("found client in hashmap\n");
+        //printf("found client in hashmap\n");
 
         return disconnect_client(client_info);
 
@@ -199,7 +199,7 @@
         if (info.nclients)      info.nclients--;
         if (info.nconnections)  info.nconnections--;
 
-        sol_debug("Client %s forcibly disconnected", client->client_id);
+        sol_debug("Client %s gracefully disconnected", client->client_id);
 
         sol_free(client);
 
@@ -208,7 +208,7 @@
 
  static void on_uv_handle_closed(uv_handle_t *handle)
 {   
-    printf("uv handle closed: %p\n", handle);
+    //printf("uv handle closed: %p\n", handle);
 }
 
  static void on_keepalive_timeout(uv_timer_t* handle){
@@ -222,10 +222,10 @@
  }
 
  static void reset_timer(uv_timer_t* keepalive_timer) {
-    printf("reset\n");
-    printf("due in before %ld\n", uv_timer_get_due_in(keepalive_timer));
+    //printf("reset\n");
+    //printf("due in before %ld\n", uv_timer_get_due_in(keepalive_timer));
     uv_timer_again(keepalive_timer);
-    printf("due in after %ld\n", uv_timer_get_due_in(keepalive_timer));
+    //printf("due in after %ld\n", uv_timer_get_due_in(keepalive_timer));
 }
 
 
@@ -234,7 +234,7 @@
         // TODO improper string (starts with $ or ends with # return failure)
         (void) client;
         char *top = (char *) pkt->publish.topic;
-        printf("sending message %s\n", pkt->publish.payload);
+        //printf("sending message %s\n", pkt->publish.payload);
 
 
         publish(mqttuv.topics, top, pkt, 0 );
@@ -251,18 +251,18 @@ static int subscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
   
     struct client *client_info = ht_find_client(mqttuv.clients, client_id);
     if(!client_info){
-        printf("hashmap failed\n");
+        //printf("hashmap failed\n");
         return -1;
     }
-    printf("subscibe tuples length %d\n", pkt->subscribe.tuples_len);
+    //printf("subscibe tuples length %d\n", pkt->subscribe.tuples_len);
     unsigned char rcs[pkt->subscribe.tuples_len];
-    printf("got the client from the hashmap\n");
+    //printf("got the client from the hashmap\n");
     for (unsigned i = 0; i < pkt->subscribe.tuples_len; i++) {
         // this not the correct qos
         int qos = pkt->subscribe.tuples[i].qos;
-        printf("associated qos %d\n", qos);
+        //printf("associated qos %d\n", qos);
         char *topic = (char *) pkt->subscribe.tuples[i].topic;
-        printf("topic %s\n", topic);
+        //printf("topic %s\n", topic);
         rcs[i] = qos;
         insert_subscription(mqttuv.topics, (char *) topic, client_info, qos);
 
@@ -288,10 +288,10 @@ static int subscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
 static int unsubscribe_handler(uv_stream_t* stream, union mqtt_packet *pkt){
     struct client *client_info = ht_find_client(mqttuv.clients,(const char *) pkt->connect.payload.client_id);
     if(!client_info){
-        printf("error not in hashmap\n");
+        //printf("error not in hashmap\n");
     }
     for (unsigned i = 0; i < pkt->subscribe.tuples_len; i++) {
-        printf("unsubscribing in tuple loop\n");
+        //printf("unsubscribing in tuple loop\n");
         unsubscribe(mqttuv.topics, (const char *) pkt->unsubscribe.tuples[i].topic, client_info);
 
         struct sub_topic *node, *tmp;
@@ -332,22 +332,24 @@ void write2subs(struct subscriber *subs, union mqtt_packet *pkt) {
 #else
 static void write2subs(struct subscriber* head, union mqtt_packet *pkt){
     if(pkt == NULL){
-        printf("correctly writing to subs in test\n");
+        //printf("correctly writing to subs in test\n");
         return;
     }
     size_t publen;
     struct subscriber* tmp = head;
     while(tmp != NULL){
 
-        printf("sending to %s\n", tmp->client->client_id);
+        //printf("sending to %s\n", tmp->client->client_id);
         publen = MQTT_HEADER_LEN + sizeof(uint16_t) + pkt->publish.topiclen + pkt->publish.payloadlen;
         pkt->publish.header.bits.qos = tmp->qos;
         unsigned char * packed = pack_mqtt_packet(pkt, PUBLISH);
 
+        /*
         for (size_t i = 0; i < (size_t)publen; i++) {
             printf("%02X ", (unsigned char) packed[i]);
         }
         printf("\n");
+        */
         
         write2(tmp->client->stream, packed, publen);
 
@@ -377,7 +379,7 @@ static void on_write(uv_write_t* req,  int status){
         perror( "uv_write error ");
             return;
       }
-    printf("wrote.\n");
+    //printf("wrote.\n");
     free(req);
 };
  
@@ -391,7 +393,7 @@ static void on_write(uv_write_t* req,  int status){
     uv_tcp_init(server->loop, client);
 
     if (uv_accept(server, (uv_stream_t *)client) == 0) {
-        printf("accepted someone!! yipee\n");
+        //printf("accepted someone!! yipee\n");
 
         uv_read_start((uv_stream_t *)client, alloc_buffer, on_read);  
     } else {
@@ -416,18 +418,20 @@ static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
         return;
     }
 
+    /*
     printf("input_buf (%zd bytes): ", nread);  // use %zd for ssize_t
     for (size_t i = 0; i < (size_t)nread; i++) {
         printf("%02X ", (unsigned char) buf->base[i]);
     }
     printf("\n");
+    */
     
 
     // error from the parsed function
     uint8_t command = (uint8_t) buf->base[0];
     uint8_t packet_type = command >> 4;
 
-    printf("packet type %d\n", packet_type );
+    //printf("packet type %d\n", packet_type );
 
     union mqtt_packet packet;
     
@@ -446,25 +450,27 @@ static void on_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
 
     switch(packet_type){
         case CONNECT:
+            sol_info("New client sent CONNECT packet\n");
             connect_handler( stream, &packet);
             break;
         case SUBSCRIBE:
+            sol_info("SUBSCRIBE packet sent by CLIENT_ID=%s\n", cli->client_id);
             subscribe_handler( stream, &packet);
             break;
         case PUBLISH:
-            printf("publish!\n");
+            sol_info("PUBLISH packet sent by CLIENT_ID=%s\n", cli->client_id);
             publish_handler(stream, &packet);
             break;
         case UNSUBSCRIBE:
-            printf("unsubscribe!\n");
+            sol_info("UNSUBSCRIBE packet sent by CLIENT_ID=%s\n", cli->client_id);
             unsubscribe_handler(stream, &packet);
             break;
         case PINGREQ:
-            printf("pingreq!\n");
+            sol_info("PINGREQ packet sent by CLIENT_ID=%s\n", cli->client_id);
             pingreq_handler(stream, &packet);
             break;
         case DISCONNECT:
-            printf("disconnect!\n");
+            sol_info("DISCONNECT packet sent by CLIENT_ID=%s\n", cli->client_id);
             disconnect_handler(stream, &packet);
             break;
     }
@@ -532,7 +538,7 @@ void publish_recursive(struct topic *node, char **levels, int depth, int max_dep
     // deliver if i'm at the lest depth or to wild card
     if (depth == max_depth || strcmp(node->level, "#") == 0) {
         if(test == 1){
-            printf("Delivering message to client \n");
+            //printf("Delivering message to client \n");
         }
         else{
             // give write2 subs the head
@@ -615,6 +621,8 @@ void unsubscribe(struct topic *root, const char *topic, struct client *client) {
         cur = &(*cur)->next;
     }
 
+    sol_info("CLIENT_ID=%s unsubsribing from TOPIC=%s", client->client_id, topic);
+
     free(dup);
 }
 
@@ -623,7 +631,6 @@ void unsubscribe_all(struct topic *root, struct client *client)
     struct sub_topic *node, *tmp;
 
     LL_FOREACH_SAFE(client->subs, node, tmp) {
-        printf("unsubscribing from %s\n", node->topic);
         unsubscribe(root, node->topic, client);  
         LL_DELETE(client->subs, node);           
         free(node->topic);                     

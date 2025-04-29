@@ -9,7 +9,7 @@ void ht_put_client(struct client **glob, struct client *new_client) {
 
 struct client *ht_find_client(struct client *glob, const char *id) {
     struct client *s;
-    printf("HASH_FIND_STR\n");
+    //printf("HASH_FIND_STR\n");
     HASH_FIND_STR(glob, id, s);
     return s;
 }
@@ -19,7 +19,7 @@ void ht_delete_client(struct client **glob, const char *id) {
     HASH_FIND_STR(*glob, id, client);
     if (client) {
         HASH_DEL(*glob, client);
-        printf("freeing client: %p\n", client);
+        //printf("freeing client: %p\n", client);
         //free(client);  // Ensure all internal data is heap-allocated
     }
 }
