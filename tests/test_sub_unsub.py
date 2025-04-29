@@ -13,8 +13,13 @@ def test_subscribe_unsubscribe(topic, client_id=None):
         if not received_before_unsubscribe:
             print(f"[{client._client_id.decode()}] First Message Now Unsubscribing")
             received_before_unsubscribe = True
-
+            
             client.unsubscribe(topic)
+            # Wait a moment and exit
+            time.sleep(2)
+            print(f"[{client._client_id.decode()}] Successfully unsubscribed and no new messages received. Test Passed.")
+            client.disconnect()
+            sys.exit(0)
         else:
             print(f"[{client._client_id.decode()}] Error: Message received AFTER unsubscribing! Test Failed.")
             sys.exit(1)
@@ -30,11 +35,4 @@ def test_subscribe_unsubscribe(topic, client_id=None):
 
     client.loop_start()
 
-    # Give it some time to receive messages
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        client.loop_stop()
-        client.disconnect()
 

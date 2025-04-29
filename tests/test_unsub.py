@@ -14,6 +14,8 @@ def main():
     publisher = Process(target=test_publish_multi, args=(topic,))
     publisher.start()
 
+
+
     publisher.join()
     subscriber.join()
     
