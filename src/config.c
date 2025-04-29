@@ -312,7 +312,7 @@ void config_print(void) {
             if (lmap[i].loglevel == config.loglevel)
                 llevel = lmap[i].lname;
         }
-        sol_info("Sol v%s is starting", VERSION);
+        sol_info("MQTTuv is starting");
         sol_info("Network settings:");
         sol_info("\tSocket family: %s", sfamily);
         if (config.socket_family == UNIX) {
@@ -328,7 +328,6 @@ void config_print(void) {
         sol_info("\tlevel: %s", llevel);
         sol_info("\tlogpath: %s", config.logpath);
         const char *human_memory = memory_to_string(config.max_memory);
-        sol_info("Max memory: %s", human_memory);
         sol_free((char *) human_memory);
         sol_free((char *) human_rsize);
     }

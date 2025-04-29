@@ -3,6 +3,7 @@
 #define CORE_H
 
 #include "uthash.h"
+#include "utlist.h"
 #include <uv.h>
 
 
@@ -25,6 +26,8 @@ struct client {
     int keepalive; // number of seconds (i am already multiplying this by )
     // struct session session;
     uv_stream_t* stream;
+    struct sub_topic* subs;
+    int handshake_done; 
     UT_hash_handle hh; /* makes this structure hashable */
 };
 
@@ -36,11 +39,16 @@ struct delivered {
 
 extern struct delivered delivered_log;
 
-struct topic{
+struct topic {
     char *level;
     struct topic *children; // childern in next level
     struct topic *next; // siblings (in the same level)
     struct subscriber *subscribers; //list of clients to send to 
+};
+
+struct sub_topic {
+    char *topic;
+    struct sub_topic *next;
 };
 
 
